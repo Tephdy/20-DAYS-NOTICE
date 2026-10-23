@@ -66,6 +66,17 @@
       border-color: #3b82f6;
       background: #fff;
     }
+
+    /* Styling for the disabled date input */
+    input[type="date"].table-date-input:disabled {
+      background: transparent;
+      color: #cbd5e1;
+      cursor: not-allowed;
+    }
+    input[type="date"].table-date-input:disabled:hover {
+      border-color: transparent;
+      background: transparent;
+    }
   </style>
 </head>
 <body class="p-2 md:p-4 flex flex-col w-full h-screen">
@@ -264,8 +275,8 @@
               <th class="px-4 py-2 border-b">Computed Due Date</th>
               <th class="px-4 py-2 border-b">Status</th>
               <th class="px-4 py-2 border-b text-center">PDF</th>
-              <th class="px-4 py-2 border-b text-center">Date Sent</th>
               <th class="px-4 py-2 border-b text-right">Actions</th>
+              <th class="px-4 py-2 border-b text-center">Date Sent</th>
             </tr>
           </thead>
           <tbody id="spreadsheetBody" class="divide-y divide-slate-100 text-sm">
@@ -411,7 +422,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbrnrRkck2nESH07Jgqjj9QiWKk5GQQUbAWbK2SMvlDu57QzCfI5E7rVHoNTNtYtsX/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCKyFTO91q-Jh7kS5n0F62S1WguGdwFc2bI0XT1zlIvXkr6NbSQw2JKZP70I0VJqPa/exec';
     const ROOT_FOLDER_ID = '16qLfbrPeU-H_UH0QUl2lIqUoqf5_nVLQ'; 
 
     let appData = {};
@@ -448,9 +459,17 @@
         if (res.success) {
           appData = res.data;
           
-          // FORMAT DATES ON LOAD (Fixes the ISO string issue)
+          // NORMALIZE DATA ON LOAD
           for (const tabName in appData) {
+            if (!Array.isArray(appData[tabName])) continue;
             appData[tabName].forEach(tenant => {
+              tenant.pdfUrl = tenant.pdfUrl || tenant.PDF_URL || tenant.pdfLink 
+                            || tenant['PDF Link'] || tenant['PDF URL'] || tenant.pdfurl || '';
+              
+              if (!tenant.status) tenant.status = 'Pending';
+              if (!tenant.dateSent) tenant.dateSent = '';
+              if (!tenant.reason) tenant.reason = '—';
+              
               if (tenant.computed20th) {
                 const d = new Date(tenant.computed20th);
                 if (!isNaN(d.getTime())) {
@@ -700,40 +719,58 @@
           if (tenant.status === 'Generated') badgeClass = 'bg-blue-100 text-blue-800';
           if (tenant.status === 'Sent') badgeClass = 'bg-green-100 text-green-800';
 
-          // PDF Link Column Content
-          let pdfCell = tenant.pdfUrl 
-            ? `<a href="${tenant.pdfUrl}" target="_blank" class="text-blue-600 hover:underline font-bold text-xs">View PDF</a>` 
+          const hasPdf = tenant.pdfUrl && String(tenant.pdfUrl).trim() !== '';
+          let pdfCell = hasPdf
+            ? `<a href="${tenant.pdfUrl}" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-bold text-xs flex justify-center items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> View PDF</a>` 
             : `<span class="text-slate-300 text-xs">—</span>`;
 
           // Date Sent Input (Calendar Popup)
+          // Added conditional disabled attribute if status is not 'Sent'
+          const isDisabled = tenant.status !== 'Sent';
+          const disabledAttr = isDisabled ? 'disabled' : '';
+          
           let dateSentHtml = '';
           if (tenant.dateSent && tenant.dateSent !== '') {
-            // Try to format the stored date to YYYY-MM-DD for the input
             try {
               const d = new Date(tenant.dateSent);
               const yyyymmdd = !isNaN(d) ? d.toISOString().split('T')[0] : tenant.dateSent;
-              dateSentHtml = `<input type="date" class="table-date-input" value="${yyyymmdd}" onchange="updateDateSent('${tenant.tenantName}', this.value)">`;
+              dateSentHtml = `<input type="date" class="table-date-input" value="${yyyymmdd}" ${disabledAttr} onchange="updateDateSent('${tenant.tenantName.replace(/'/g, "\\'")}', this.value)">`;
             } catch(e) {
-              dateSentHtml = `<input type="date" class="table-date-input" onchange="updateDateSent('${tenant.tenantName}', this.value)">`;
+              dateSentHtml = `<input type="date" class="table-date-input" ${disabledAttr} onchange="updateDateSent('${tenant.tenantName.replace(/'/g, "\\'")}', this.value)">`;
             }
           } else {
-            dateSentHtml = `<input type="date" class="table-date-input" onchange="updateDateSent('${tenant.tenantName}', this.value)">`;
+            dateSentHtml = `<input type="date" class="table-date-input" ${disabledAttr} onchange="updateDateSent('${tenant.tenantName.replace(/'/g, "\\'")}', this.value)">`;
           }
+
+          const safeName = tenant.tenantName.replace(/'/g, "\\'");
 
           let actionBtn = '';
           if (tenant.status === 'Pending') {
-            actionBtn = `<button onclick="generateSingle('${tenant.tenantName}')" class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-900 transition-colors">⚙️ Generate</button>`;
+            actionBtn = `
+              <button onclick="generateSingle('${safeName}')" class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-900 transition-colors inline-flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Generate
+              </button>`;
           } else if (tenant.status === 'Generated') {
             actionBtn = `
               <div class="flex justify-end items-center gap-1">
-                <button onclick="regenerateSingle('${tenant.tenantName}')" class="bg-slate-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 transition-colors" title="Re-generate and overwrite Drive file">↻ Regenerate</button>
-                <button onclick="markAsSent('${tenant.tenantName}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition-colors">✅ Mark as Sent</button>
+                <button onclick="regenerateSingle('${safeName}')" class="bg-slate-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 transition-colors inline-flex items-center gap-1" title="Re-generate and overwrite Drive file">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                  Regenerate
+                </button>
+                <button onclick="markAsSent('${safeName}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition-colors inline-flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  Mark as Sent
+                </button>
               </div>
             `;
           } else {
             actionBtn = `
               <div class="flex justify-end items-center gap-1">
-                <span class="text-xs text-slate-400 font-medium">Completed</span>
+                <span class="text-xs text-slate-400 font-medium inline-flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  Completed
+                </span>
               </div>
             `;
           }
@@ -752,11 +789,11 @@
             <td class="px-4 py-3 text-center">
               ${pdfCell}
             </td>
-            <td class="px-4 py-3 text-center">
-              ${dateSentHtml}
-            </td>
             <td class="px-4 py-3 text-right">
               ${actionBtn}
+            </td>
+            <td class="px-4 py-3 text-center">
+              ${dateSentHtml}
             </td>
           `;
           spreadsheetBody.appendChild(tr);
@@ -795,9 +832,6 @@
 
       // Sync to database
       await syncToDatabase(tenant, activeTab, 'update');
-      
-      // Optional: Re-render to reflect updated status if needed
-      // renderSpreadsheet(); 
     };
 
     // --- PDF GENERATION LOGIC ---
@@ -887,8 +921,11 @@
           });
 
           const uploadData = await uploadRes.json();
+          console.log('Upload response:', uploadData); 
           if (uploadData.success && uploadData.fileUrl) {
             tenant.pdfUrl = uploadData.fileUrl; // Save the URL
+          } else {
+            console.warn('PDF upload failed or no fileUrl returned:', uploadData);
           }
         }
 
@@ -942,8 +979,11 @@
           });
 
           const uploadData = await uploadRes.json();
+          console.log('Regenerate upload response:', uploadData); 
           if (uploadData.success && uploadData.fileUrl) {
             tenant.pdfUrl = uploadData.fileUrl; // Update the URL
+          } else {
+            console.warn('Regenerate upload failed or no fileUrl returned:', uploadData);
           }
         }
         
