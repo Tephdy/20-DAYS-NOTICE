@@ -275,7 +275,7 @@
             <tr>
               <th class="px-4 py-2 border-b">Tenant Name</th>
               <th class="px-4 py-2 border-b">Unit</th>
-              <th class="px-4 py-2 border-b">Computed 20th/10th Day Date</th>
+              <th class="px-4 py-2 border-b">Computed Due Date</th>
               <th class="px-4 py-2 border-b">Status</th>
               <th class="px-4 py-2 border-b text-center">PDF</th>
               <th class="px-4 py-2 border-b text-right">Actions</th>
@@ -517,11 +517,9 @@
           termLabel = termMonths === 6 ? '6 months' : termMonths === 12 ? '1 year (12 months)' : termMonths === 24 ? '2 years (24 months)' : termMonths + ' months';
         }
         
-        // 1. Calculate the actual contract end date
         let actualEndD = new Date(startD);
         actualEndD.setMonth(actualEndD.getMonth() + termMonths);
 
-        // 2. Count 20 days from start date (or 10 days for short term)
         let noticeDate = new Date(startD);
         if (isMonthly) {
           noticeDate.setDate(noticeDate.getDate() + 10);
@@ -529,7 +527,6 @@
           noticeDate.setDate(noticeDate.getDate() + 20);
         }
 
-        // 3. Monthly Recurrence: roll forward by 1 month until it hits the current or future cycle
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -537,7 +534,6 @@
           noticeDate.setMonth(noticeDate.getMonth() + 1);
         }
 
-        // 4. If the date rolled past the contract end, revert to actual end date
         if (noticeDate.getTime() > actualEndD.getTime()) {
           noticeDate = new Date(actualEndD);
         }
@@ -809,11 +805,20 @@
       try {
         const doc = await generatePDFDoc(tenant);
         const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
-        doc.save(fileName);
 
         if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
           document.getElementById('loadingText').textContent = `Uploading to Drive...`;
-          const monthName = tenant.folderMonth || "Unknown Month";
+          
+          // FIXED: Ensure monthName is never "Unknown Month"
+          let monthName = tenant.folderMonth;
+          if (!monthName || monthName === 'Unknown Month' || monthName.trim() === '') {
+            if (tenant.computed20th && tenant.computed20th.includes('-')) {
+              monthName = new Date(tenant.computed20th).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            } else {
+              monthName = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            }
+          }
+
           const propertyName = tenant.building || "Unknown Property";
           const base64Data = doc.output('datauristring').split(',')[1];
           
@@ -828,7 +833,11 @@
           const uploadData = await uploadRes.json();
           if (uploadData.success && uploadData.fileUrl) {
             tenant.pdfUrl = uploadData.fileUrl;
+          } else {
+            throw new Error("Upload failed or no URL returned.");
           }
+        } else {
+            doc.save(fileName);
         }
 
         tenant.status = 'Generated';
@@ -855,11 +864,20 @@
       try {
         const doc = await generatePDFDoc(tenant);
         const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
-        doc.save(fileName);
 
         if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
           document.getElementById('loadingText').textContent = `Re-uploading to Drive...`;
-          const monthName = tenant.folderMonth || "Unknown Month";
+          
+          // FIXED: Ensure monthName is never "Unknown Month"
+          let monthName = tenant.folderMonth;
+          if (!monthName || monthName === 'Unknown Month' || monthName.trim() === '') {
+            if (tenant.computed20th && tenant.computed20th.includes('-')) {
+              monthName = new Date(tenant.computed20th).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            } else {
+              monthName = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            }
+          }
+
           const propertyName = tenant.building || "Unknown Property";
           const base64Data = doc.output('datauristring').split(',')[1];
           
@@ -874,7 +892,11 @@
           const uploadData = await uploadRes.json();
           if (uploadData.success && uploadData.fileUrl) {
             tenant.pdfUrl = uploadData.fileUrl;
+          } else {
+            throw new Error("Upload failed or no URL returned.");
           }
+        } else {
+            doc.save(fileName);
         }
         
         renderSpreadsheet();
@@ -887,6 +909,159 @@
         document.getElementById('loadingOverlay').classList.remove('flex');
       }
     };
+
+    // --- BATCH GENERATE ALL ACTION ---
+    document.getElementById('batchGenerateBtn').addEventListener('click', async () => {
+      if (!activeTab) return alert("No active tab selected.");
+      
+      const pendingTenants = appData[activeTab].filter(t => t.status === 'Pending');
+      
+      if (pendingTenants.length === 0) {
+        return alert("There are no Pending tenants in this tab to generate.");
+      }
+
+      const confirmGenerate = confirm(`Are you sure you want to generate PDFs for all ${pendingTenants.length} Pending tenants in "${activeTab}"?`);
+      if (!confirmGenerate) return;
+
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      document.getElementById('loadingOverlay').classList.add('flex');
+
+      try {
+        for (let i = 0; i < pendingTenants.length; i++) {
+          const tenant = pendingTenants[i];
+          document.getElementById('loadingText').textContent = `Generating (${i + 1}/${pendingTenants.length}): ${tenant.tenantName}...`;
+          
+          const doc = await generatePDFDoc(tenant);
+          const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
+
+          if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+            document.getElementById('loadingText').textContent = `Uploading (${i + 1}/${pendingTenants.length}): ${tenant.tenantName}...`;
+            
+            // FIXED: Ensure monthName is never "Unknown Month"
+            let monthName = tenant.folderMonth;
+            if (!monthName || monthName === 'Unknown Month' || monthName.trim() === '') {
+              if (tenant.computed20th && tenant.computed20th.includes('-')) {
+                monthName = new Date(tenant.computed20th).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+              } else {
+                monthName = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+              }
+            }
+            
+            const propertyName = tenant.building || "Unknown Property";
+            const base64Data = doc.output('datauristring').split(',')[1];
+            
+            const uploadRes = await fetch(APPS_SCRIPT_URL, {
+              method: 'POST',
+              body: JSON.stringify({
+                fileName: fileName, base64: base64Data, rootFolderId: ROOT_FOLDER_ID,
+                propertyName: propertyName, monthName: monthName, tenantName: tenant.tenantName
+              })
+            });
+
+            const uploadData = await uploadRes.json();
+            if (uploadData.success && uploadData.fileUrl) {
+              tenant.pdfUrl = uploadData.fileUrl;
+            }
+          } else {
+            doc.save(fileName); // Fallback local save only if no API URL
+          }
+
+          tenant.status = 'Generated';
+          renderSpreadsheet(); 
+          await syncToDatabase(tenant, activeTab, 'update');
+        }
+        
+        alert(`Successfully generated and uploaded ${pendingTenants.length} notices.`);
+      } catch (error) {
+        console.error(error);
+        alert("An error occurred during batch generation: " + error.message);
+      } finally {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('loadingOverlay').classList.remove('flex');
+      }
+    });
+
+    // --- NEW BATCH DOWNLOAD ZIP ACTION WITH FOLDERS ---
+    document.getElementById('batchDownloadZipBtn').addEventListener('click', async () => {
+      if (!activeTab) return alert("No active tab selected.");
+
+      const generatedTenants = appData[activeTab].filter(t => t.pdfUrl && t.pdfUrl.trim() !== '');
+      
+      if (generatedTenants.length === 0) {
+        return alert("There are no generated PDFs in this tab to download. Please generate them first.");
+      }
+
+      const confirmZip = confirm(`Are you sure you want to download a ZIP file containing ${generatedTenants.length} generated PDFs?`);
+      if (!confirmZip) return;
+
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      document.getElementById('loadingOverlay').classList.add('flex');
+      document.getElementById('loadingText').textContent = `Preparing ZIP...`;
+
+      try {
+        const zip = new JSZip();
+        let count = 0;
+
+        for (let i = 0; i < generatedTenants.length; i++) {
+          const tenant = generatedTenants[i];
+          
+          try {
+            document.getElementById('loadingText').textContent = `Downloading (${i + 1}/${generatedTenants.length}): ${tenant.tenantName}...`;
+            
+            // Fetch the actual PDF from Google Drive URL
+            const response = await fetch(tenant.pdfUrl);
+            if (!response.ok) throw new Error("Network response was not ok");
+            
+            const blob = await response.blob();
+            const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
+            
+            // FIXED: Ensure folder structure handles missing properties gracefully
+            const propertyName = tenant.building || "Unknown Property";
+            
+            let monthName = tenant.folderMonth;
+            if (!monthName || monthName === 'Unknown Month' || monthName.trim() === '') {
+              if (tenant.computed20th && tenant.computed20th.includes('-')) {
+                monthName = new Date(tenant.computed20th).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+              } else {
+                monthName = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+              }
+            }
+
+            const tenantFolder = tenant.tenantName || "Unknown Tenant";
+            
+            const folderPath = `${propertyName}/${monthName}/${tenantFolder}/`;
+            
+            zip.file(folderPath + fileName, blob);
+            count++;
+          } catch (err) {
+            console.warn(`Could not download PDF for ${tenant.tenantName}:`, err);
+          }
+        }
+
+        if (count === 0) throw new Error("Could not download any PDF files.");
+
+        document.getElementById('loadingText').textContent = `Zipping files...`;
+        const content = await zip.generateAsync({ type: "blob" });
+        
+        const zipFileName = `Lease Renewals - ${activeTab} - ${new Date().toISOString().split('T')[0]}.zip`;
+        
+        // Trigger Download
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(content);
+        a.download = zipFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+
+      } catch (error) {
+        console.error(error);
+        alert("Error creating ZIP: " + error.message);
+      } finally {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('loadingOverlay').classList.remove('flex');
+      }
+    });
 
     window.markAsSent = async function(tenantName) {
       const tenantIndex = appData[activeTab].findIndex(t => t.tenantName === tenantName);
@@ -1042,7 +1217,6 @@
         if (!appData[selectedSheetName]) appData[selectedSheetName] = [];
 
         for (let i = 0; i < json.length; i++) {
-          // SHOW UPLOAD PROGRESS HERE
           document.getElementById('loadingText').textContent = `Uploading Data... (${i + 1}/${json.length})`;
           
           const row = json[i];
