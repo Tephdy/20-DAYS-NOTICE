@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lease Renewal Management System</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <style>
+    body { background-color: #f1f5f9; }
+    
+    .pdf-page {
+      width: 210mm;
+      height: 297mm;
+      background: #ffffff;
+      margin: 0 auto;
+      padding: 20mm 20mm; 
+      box-sizing: border-box;
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 15px;
+      line-height: 1.35;
+      color: #000000;
+      overflow: hidden;
+    }
+
+    #page-1 { line-height: 1.1; }
+    #page-1 > div:first-child { margin-bottom: 12px; }
+    #page-1 > div:nth-child(2) { margin-bottom: 12px; }
+    #page-1 > div:nth-child(3) { margin-bottom: 4px; }
+    #page-1 > div:nth-child(4), #page-1 > p { margin-bottom: 8px; }
+    #page-1 > div:nth-child(6) { margin-top: 12px; margin-bottom: 6px; }
+    #page-1 .list-item { margin-bottom: 2px; }
+    #page-1 > div:nth-child(8) { margin-top: 12px; margin-bottom: 4px; }
+    #page-1 > div:nth-child(10) { margin-top: 6px; }
+    #page-1 > div:nth-child(11) { margin-top: 8px; }
+    #page-1 > div:nth-child(12) { margin-top: 24px; }
+
+    .pdf-page p, .pdf-page div, .pdf-page span {
+      text-align: left !important;
+      letter-spacing: normal !important;
+      word-spacing: normal !important;
+    }
+
+    .list-item {
+      list-style: none;
+      margin-bottom: 4px;
+      padding-left: 1.5em;
+      text-indent: -1.5em;
+    }
+    .list-item .num {
+      font-weight: bold;
+      display: inline-block;
+      width: 1.5em;
+      text-indent: 0;
+    }
+
+    .form-table {
+      width: 100%;
+      max-width: 450px;
+      margin: 15px 0 25px 0;
+      border-collapse: collapse;
+    }
+    .form-table td {
+      padding: 6px 10px;
+      vertical-align: bottom;
+    }
+    .line-cell {
+      border-bottom: 1.5px solid black;
+      width: 180px;
+    }
+
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #ffffff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Custom Scrollbar for Tabs */
+    .tab-scroll::-webkit-scrollbar { height: 6px; }
+    .tab-scroll::-webkit-scrollbar-track { background: transparent; }
+    .tab-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .tab-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col lg:flex-row gap-8 max-w-[1400px] mx-auto items-start min-h-screen">
+
+  <!-- LOADING OVERLAY -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex-col items-center justify-center backdrop-blur-sm">
+    <div class="spinner mb-4"></div>
+    <h2 id="loadingText" class="text-white text-xl font-bold">Processing...</h2>
+    <p class="text-slate-300 mt-2">Please wait.</p>
+  </div>
+
+  <!-- LEFT SIDEBAR -->
+  <div class="w-full lg:w-1/3 bg-white p-6 rounded-2xl shadow-xl border border-slate-200 sticky top-8 print:hidden">
+    <h2 class="text-2xl font-bold mb-4 text-slate-800">📄 Renewal System</h2>
+    
+    <div class="space-y-4">
+      
+      <!-- EXCEL IMPORT SECTION -->
+      <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl">
+        <h3 class="font-bold text-blue-800 mb-2">1. Import Data</h3>
+        <p class="text-xs text-blue-600 mb-3">Upload an .xlsx file. You can import multiple tabs.</p>
+        
+        <label class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer text-sm">
+          📁 Choose Excel File
+          <input type="file" id="excelInput" accept=".xlsx, .xls" class="hidden">
+        </label>
+
+        <!-- Sheet Selection -->
+        <div id="sheetSelectionArea" class="hidden mt-4 pt-4 border-t border-blue-200">
+          <label class="block text-xs font-bold text-blue-800 uppercase mb-1">Select Sheet/Tab to Import</label>
+          <select id="sheetSelect" class="w-full px-3 py-2 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 text-sm bg-white mb-3">
+            <!-- Options injected here -->
+          </select>
+          <button id="loadSheetBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg shadow-md text-sm transition-colors">
+            Add Selected Sheet to System
+          </button>
+        </div>
+      </div>
+
+      <div class="relative flex py-2 items-center">
+        <div class="flex-grow border-t border-slate-300"></div>
+        <span class="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold uppercase">Batch Actions</span>
+        <div class="flex-grow border-t border-slate-300"></div>
+      </div>
+
+      <button id="batchGenerateBtn" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
+        ⚙️ Generate All Pending PDFs (Current Tab)
+      </button>
+      <button id="batchDownloadZipBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
+        📦 Download Generated as ZIP (Current Tab)
+      </button>
+
+      <div class="relative flex py-2 items-center mt-4">
+        <div class="flex-grow border-t border-slate-300"></div>
+        <span class="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold uppercase">Manual Entry</span>
+        <div class="flex-grow border-t border-slate-300"></div>
+      </div>
+
+      <details class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+        <summary class="font-bold text-slate-700 cursor-pointer select-none">➕ Add Single Tenant</summary>
+        <div class="space-y-3 mt-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tenant Name</label>
+            <input type="text" id="inputTenant" placeholder="e.g. Joseph Amandy" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Unit</label>
+              <input type="text" id="inputUnit" placeholder="e.g. 4B" class="w-full px-3 py-2 border rounded text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Building</label>
+              <input type="text" id="inputBuilding" value="Eve's Residences" class="w-full px-3 py-2 border rounded text-sm">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Start of Contract</label>
+            <input type="date" id="inputStartDate" class="w-full px-3 py-2 border rounded text-sm">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Term</label>
+              <select id="inputTerm" class="w-full px-3 py-2 border rounded text-sm bg-white">
+                <option value="M-M">M-M (Monthly)</option>
+                <option value="6">6 months</option>
+                <option value="12" selected>1 year</option>
+                <option value="24">2 years</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Monthly Rent</label>
+              <input type="number" id="inputRent" value="6000" class="w-full px-3 py-2 border rounded text-sm">
+            </div>
+          </div>
+          <button id="manualAddBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-sm mt-2">Add to Current Tab</button>
+        </div>
+      </details>
+
+    </div>
+  </div>
+
+  <!-- RIGHT AREA: MONITORING SPREADSHEET -->
+  <div class="w-full lg:w-2/3 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col h-[85vh]">
+    
+    <!-- Header & Tabs -->
+    <div class="p-6 border-b border-slate-200 bg-slate-50 rounded-t-2xl flex flex-col gap-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h3 class="text-xl font-bold text-slate-800">Monitoring Spreadsheet</h3>
+          <p class="text-sm text-slate-500">Data is saved automatically in your browser.</p>
+        </div>
+        
+        <div class="flex flex-wrap gap-2 items-center">
+          <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full" id="countPending">0 Pending</span>
+          <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full" id="countGenerated">0 Generated</span>
+          <span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full" id="countSent">0 Sent</span>
+          <button id="clearCurrentTabBtn" class="ml-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold px-3 py-1 rounded-full transition-colors" title="Clear data for current tab only">🗑️ Clear Current Tab</button>
+        </div>
+      </div>
+
+      <!-- Dynamic Tabs Container -->
+      <div id="tabsContainer" class="flex items-center gap-2 overflow-x-auto tab-scroll pb-1">
+        <!-- Tabs injected here -->
+      </div>
+
+      <!-- SEARCH & FILTER BAR -->
+      <div class="flex flex-col sm:flex-row gap-3 mt-2">
+        <!-- Search Input -->
+        <div class="flex-1 relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input type="text" id="searchInput" placeholder="Search Name or Unit..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+        </div>
+        
+        <!-- Month Filter -->
+        <select id="monthFilter" class="w-full sm:w-44 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+          <option value="ALL">All Months</option>
+          <!-- Options injected by JS -->
+        </select>
+
+        <!-- Status Filter -->
+        <select id="statusFilter" class="w-full sm:w-40 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+          <option value="ALL">All Statuses</option>
+          <option value="Pending">Pending Only</option>
+          <option value="Generated">Generated Only</option>
+          <option value="Sent">Sent Only</option>
+        </select>
+      </div>
+    </div>
+    
+    <!-- Table -->
+    <div class="overflow-auto flex-1 p-0">
+      <table class="w-full text-left border-collapse">
+        <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-bold sticky top-0 shadow-sm z-10">
+          <tr>
+            <th class="px-4 py-3 border-b">Tenant Name</th>
+            <th class="px-4 py-3 border-b">Unit</th>
+            <th class="px-4 py-3 border-b">Computed Due Date</th>
+            <th class="px-4 py-3 border-b">Status</th>
+            <th class="px-4 py-3 border-b text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="spreadsheetBody" class="divide-y divide-slate-100 text-sm">
+          <!-- Rows injected dynamically -->
+        </tbody>
+      </table>
+    </div>
+    
+  </div>
+
+  <!-- HIDDEN PDF TEMPLATE -->
+  <div id="pdf-template" style="position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none;">
+    <!-- PAGE 1 -->
+    <div id="page-1" class="pdf-page relative">
+      <div class="w-full flex justify-center mb-8">
+        <img src="img/1.png" alt="Logo" style="max-height: 80px;" onerror="this.style.display='none'">
+      </div>
+      
+      <div class="text-center font-bold text-[17px] uppercase mb-6 tracking-wide">
+        20‑DAY NOTICE & ADVANCE AGREEMENT FOR RENEWAL OF CONTRACT
+      </div>
+
+      <div class="font-bold text-[16px] mb-2">Letter of Intent</div>
+      
+      <div class="flex flex-wrap justify-between mb-4">
+        <span>Date: <span id="outDate"></span></span>
+        <span>Tenant Name: <span id="outTenant"></span></span>
+        <span>Building: <span id="outBuilding"></span></span>
+        <span>Unit: <span id="outUnit"></span></span>
+      </div>
+
+      <p class="mb-4">
+        This serves as your official 20‑day notice prior to the expiration of your current Lease Contract on: <strong id="outDay20"></strong>. Please be guided by the following terms and conditions regarding contract renewal:
+      </p>
+
+      <div class="font-bold text-[16px] uppercase mt-6 mb-3">TERMS AND CONDITIONS</div>
+      
+      <div>
+        <div class="list-item">
+          <span class="num">1.</span><strong>Contract Signing Period</strong> – The tenant must sign the renewal contract on or before the 20th day prior to the end of the current contract period.
+        </div>
+        <div class="list-item">
+          <span class="num">2.</span><strong>Non-Renewal Notice</strong> – If the tenant does not wish to renew, a written notice of non-renewal must be submitted to Management through official Messenger communication on or before the 20th day prior to contract expiration.
+          <div class="ml-6 mt-1">a. Your 20th day will fall on: <span id="outDay20b"></span></div>
+        </div>
+        <div class="list-item">
+          <span class="num">3.</span><strong>Failure to Comply (Grace Period: 5 Days After the 20th Day)</strong> – If the tenant fails to confirm renewal or non-renewal within five (5) days after the 20th day, a penalty shall apply starting on the 6th day.
+          <div class="ml-6 mt-1">a. Penalty start date (6th day): <strong id="outSixthDay"></strong></div>
+          <div class="ml-6">b. A penalty of ₱500.00 per day shall be imposed until the tenant provides written confirmation.</div>
+        </div>
+        <div class="list-item">
+          <span class="num">4.</span><strong>Management Right to Market the Unit</strong> – After the grace period and prior to contract expiration, Management reserves the right to market and offer the unit to prospective tenants if no confirmation has been received.
+        </div>
+        <div class="list-item">
+          <span class="num">5.</span><strong>Deduction from Security Deposit</strong> – Management reserves the right to deduct all applicable penalties and charges from the tenant's Security Deposit without further notice.
+        </div>
+        <div class="list-item">
+          <span class="num">6.</span><strong>Management Discretion on Renewal</strong> – Renewal is not automatic and is subject to Management approval based on the tenant's compliance, conduct, and payment history.
+        </div>
+        <div class="list-item">
+          <span class="num">7.</span><strong>No Further Reminder Clause</strong> – The 20-day notice period shall not require any further reminder. The tenant is fully aware and responsible for compliance within the prescribed period.
+        </div>
+        <div class="list-item">
+          <span class="num">8.</span><strong>Withdrawal After Confirmation</strong> – If the tenant confirms renewal but later withdraws or fails to proceed, Management reserves the right to charge 20% of the total Security Deposit.
+        </div>
+        <div class="list-item">
+          <span class="num">9.</span><strong>Contract Signing Location</strong> – All lease renewals shall be signed exclusively at: Eve's Residences Office #69 Matahimik St., Riverside II, Santo Domingo, Cainta, Rizal.
+        </div>
+        <div class="list-item">
+          <span class="num">10.</span><strong>Advance Payment and Management Discretion</strong> – If the tenant chooses to renew the lease contract, the tenant shall be required to pay an amount equivalent to twenty percent (20%) of the total contract value, based on the selected lease term and monthly rental rate. This amount shall be paid prior to contract signing and shall form part of the lease payment. The tenant shall also pay an Occupancy Support Fee of ₱298.00 per month.
+          <div class="ml-6 mt-1">a. Management reserves the right to amend, modify, or update policies and terms at its sole discretion as necessary for operational and administrative purposes.</div>
+        </div>
+      </div>
+
+      <div class="font-bold text-[16px] mt-8 mb-2">TENANT RESPONSE</div>
+      <div>Please check one ( )</div>
+      <div class="mt-3 space-y-1 font-bold">
+        <div><span id="outCheckYes"></span> YES, I WILL RENEW MY CONTRACT</div>
+        <div><span id="outCheckNo"></span> NO, I WILL NOT RENEW MY CONTRACT</div>
+      </div>
+      <div class="mt-4"><strong>Reason:</strong> <span id="outReason"></span></div>
+
+      <div class="mt-16 w-[250px]">
+        <div class="border-t-2 border-black pt-1 text-center"><span id="outSignature1"></span></div>
+        <div class="text-center text-sm mt-1">Tenant's Signature</div>
+      </div>
+    </div>
+
+    <!-- PAGE 2 -->
+    <div id="page-2" class="pdf-page relative">
+      <p class="mb-3">
+        I, <strong><span id="outTenant2"></span></strong>, hereby express my intent to renew my lease contract with Eve's Residences for the period of: <strong><span id="outTermLabel"></span></strong>
+      </p>
+
+      <table class="form-table">
+        <tr>
+          <td class="font-bold text-[16px]">From:</td>
+          <td class="line-cell"></td>
+          <td class="font-bold text-center text-[16px]" style="width: 40px;">To:</td>
+          <td class="line-cell"></td>
+        </tr>
+      </table>
+
+      <p class="mb-6">
+        at the rate of <strong><span id="outRent"></span></strong> per month, plus ₱298.00 monthly Occupancy Support Fee. My current contract will expire on <strong><span id="outDay20c"></span></strong>, under the terms and conditions stated in the renewal notice issued by Management.
+      </p>
+
+      <div class="font-bold text-[16px] uppercase mt-6 mb-3">ADDITIONAL CONDITIONS</div>
+      
+      <div>
+        <div class="list-item">
+          <span class="num">1.</span>Contract signing shall be conducted exclusively at the Eve's Residences Office stated above.
+        </div>
+        <div class="list-item">
+          <span class="num">2.</span>No contract signing means no renewal will take effect.
+        </div>
+        <div class="list-item">
+          <span class="num">3.</span>Management implements rules and penalties for tenants who fail to confirm their intent.
+        </div>
+        <div class="list-item">
+          <span class="num">4.</span>Failure to confirm may result in penalties and the unit being offered to other tenants.
+        </div>
+        <div class="list-item">
+          <span class="num">5.</span><strong>DIGITAL DOCUMENTS AND INTENT LETTER CLAUSE:</strong> All lease-related documents may be executed electronically and shall be considered valid and legally binding under Republic Act No. 8792 (Electronic Commerce Act of the Philippines).
+        </div>
+      </div>
+
+      <div class="my-6">
+        <strong>Advance payment (20% of total contract value):</strong> <span id="outAdvance"></span><br>
+        <span class="text-[15px] text-slate-800 italic">(based on <span id="outRent2"></span>/month × <span id="outTermMonths"></span> months = <span id="outTotalContract"></span>)</span>
+      </div>
+
+      <div class="mt-16 w-[250px]">
+        <div class="border-t-2 border-black pt-1 text-center"><span id="outSignature2"></span></div>
+        <div class="text-center text-sm mt-1">Tenant's Signature</div>
+      </div>
+
+      <div class="mt-10 text-[15px] bg-slate-50 p-4 rounded border border-slate-200 italic">
+        <strong>NOTICE VALIDITY</strong><br>
+        This document is considered valid even without signature and becomes effective upon sending through the tenant's registered Messenger or official communication channel. (Ang dokumentong ito ay may bisa kahit walang pirma sa oras na ito ay naipadala sa inyong opisyal na Messenger o contact channel.) This document forms part of the Lease Agreement.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // ⚠️ GOOGLE APPS SCRIPT SETUP
+    // ==========================================
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzJOMbtZE1aa3AOYPEkkH1FUXdPY_X0pzfHpVD8AlPcmOrFy9tnodF2c9bqDCC_OZI/exec';
+    const ROOT_FOLDER_ID = '16qLfbrPeU-H_UH0QUl2lIqUoqf5_nVLQ'; 
+    // ==========================================
+
+    // SYSTEM STATE & STORAGE
+    let appData = {};
+    let activeTab = null;
+    let workbookCache = null;
+
+    const STORAGE_KEY = 'leaseRenewalMultiTabData';
+
+    // UI Elements
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingText = document.getElementById('loadingText');
+    const spreadsheetBody = document.getElementById('spreadsheetBody');
+    const excelInput = document.getElementById('excelInput');
+    const sheetSelectionArea = document.getElementById('sheetSelectionArea');
+    const sheetSelect = document.getElementById('sheetSelect');
+    const loadSheetBtn = document.getElementById('loadSheetBtn');
+    const clearCurrentTabBtn = document.getElementById('clearCurrentTabBtn');
+    const tabsContainer = document.getElementById('tabsContainer');
+    
+    // Search & Filter Elements
+    const searchInput = document.getElementById('searchInput');
+    const monthFilter = document.getElementById('monthFilter');
+    const statusFilter = document.getElementById('statusFilter');
+
+    // Counters
+    const countPending = document.getElementById('countPending');
+    const countGenerated = document.getElementById('countGenerated');
+    const countSent = document.getElementById('countSent');
+
+    // Helper: Date computation
+    function computeDates(startContract, term) {
+      let computed20th = '';
+      let sixthDay = '';
+      let termLabel = '';
+      let termMonths = 12;
+      let folderMonth = 'Unknown Month'; 
+
+      let startD;
+      if (typeof startContract === 'number') {
+        startD = new Date(Math.round((startContract - 25569) * 86400 * 1000));
+      } else if (startContract instanceof Date) {
+        startD = startContract;
+      } else if (typeof startContract === 'string') {
+        startD = new Date(startContract.trim()); 
+      } else {
+        startD = new Date(startContract);
+      }
+
+      if (!isNaN(startD.getTime())) {
+        // Check for Monthly variants
+        const termString = String(term).toUpperCase().trim();
+        const isMonthly = 
+          termString === 'M-M' || 
+          termString === 'MM' || 
+          termString.includes('MONTHLY') || 
+          termString === 'TRIAL MONTH' || 
+          termString === 'EXT. TRIAL' || 
+          termString === 'MONTH-MONTH' || 
+          termString === 'EXT. TRIAL +';
+
+        if (isMonthly) {
+          startD.setMonth(startD.getMonth() + 1);
+          startD.setDate(10); 
+          termLabel = 'Monthly';
+          termMonths = 1;
+        } else {
+          termMonths = Number(term) || 12;
+          startD.setDate(20); 
+          termLabel = termMonths === 6 ? '6 months' : termMonths === 12 ? '1 year (12 months)' : termMonths === 24 ? '2 years (24 months)' : termMonths + ' months';
+        }
+        
+        computed20th = startD.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        folderMonth = startD.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        let penaltyD = new Date(startD);
+        penaltyD.setDate(penaltyD.getDate() + 6);
+        sixthDay = penaltyD.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      } else {
+        computed20th = startContract ? String(startContract) : 'No Date';
+        sixthDay = '_______________';
+        folderMonth = 'Unknown Month';
+      }
+
+      return { computed20th, sixthDay, termMonths, termLabel, folderMonth };
+    }
+
+    function formatPeso(amount) {
+      return '₱' + (Number(amount) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // LOCAL STORAGE FUNCTIONS
+    function saveToStorage() {
+      const dataToSave = {};
+      for (const tab in appData) {
+        dataToSave[tab] = appData[tab].map(t => {
+          const { generatedDoc, ...rest } = t; 
+          return rest;
+        });
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    }
+
+    function loadFromStorage() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          appData = JSON.parse(saved);
+          const tabNames = Object.keys(appData);
+          if (tabNames.length > 0) {
+            activeTab = tabNames[0]; 
+            renderTabs();
+            renderSpreadsheet();
+          }
+        } catch (e) {
+          console.error("Failed to parse local storage data", e);
+        }
+      }
+    }
+
+    // UI RENDERING
+    function renderTabs() {
+      tabsContainer.innerHTML = '';
+      const tabNames = Object.keys(appData);
+
+      if (tabNames.length === 0) {
+        tabsContainer.innerHTML = `<span class="text-sm text-slate-400 italic">No tabs imported yet.</span>`;
+        return;
+      }
+
+      tabNames.forEach(tabName => {
+        const isActive = tabName === activeTab;
+        const tabBtn = document.createElement('button');
+        
+        tabBtn.className = `px-4 py-2 rounded-t-lg font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${
+          isActive 
+          ? 'bg-white border-blue-600 text-blue-700 shadow-sm' 
+          : 'bg-slate-200 border-transparent text-slate-600 hover:bg-slate-300'
+        }`;
+        tabBtn.textContent = tabName;
+        
+        tabBtn.addEventListener('click', () => {
+          activeTab = tabName;
+          searchInput.value = ''; 
+          statusFilter.value = 'ALL';
+          renderTabs();
+          renderSpreadsheet();
+        });
+        
+        tabsContainer.appendChild(tabBtn);
+      });
+    }
+
+    // POPULATE MONTH FILTER DROPDOWN
+    function populateMonthFilter() {
+      // Clear old options except "All Months"
+      monthFilter.innerHTML = '<option value="ALL">All Months</option>';
+      
+      if (!activeTab || !appData[activeTab]) return;
+
+      const tenants = appData[activeTab];
+      const uniqueMonths = new Set();
+
+      tenants.forEach(t => {
+        if (t.computed20th && t.computed20th !== 'No Date' && t.computed20th !== 'Unknown Month') {
+          try {
+            const d = new Date(t.computed20th);
+            if (!isNaN(d)) {
+              uniqueMonths.add(d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }));
+            }
+          } catch(e) {}
+        }
+      });
+
+      const sortedMonths = Array.from(uniqueMonths).sort((a, b) => {
+        return new Date(a) - new Date(b);
+      });
+
+      sortedMonths.forEach(monthStr => {
+        const option = document.createElement('option');
+        option.value = monthStr;
+        option.textContent = monthStr;
+        monthFilter.appendChild(option);
+      });
+      
+      monthFilter.value = 'ALL';
+    }
+
+    function renderSpreadsheet() {
+      spreadsheetBody.innerHTML = '';
+      
+      let pending = 0, generated = 0, sent = 0;
+
+      if (!activeTab || !appData[activeTab] || appData[activeTab].length === 0) {
+        spreadsheetBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-4 py-12 text-center text-slate-400">
+              <div class="text-4xl mb-2">📊</div>
+              No data in this tab.
+            </td>
+          </tr>`;
+        countPending.textContent = `0 Pending`;
+        countGenerated.textContent = `0 Generated`;
+        countSent.textContent = `0 Sent`;
+        return;
+      }
+
+      if (monthFilter.value === 'ALL') {
+         populateMonthFilter();
+      }
+
+      const tenants = appData[activeTab];
+
+      const searchTerm = searchInput.value.toLowerCase();
+      const statusValue = statusFilter.value;
+      const monthValue = monthFilter.value;
+
+      tenants.forEach(t => {
+        if (t.status === 'Pending') pending++;
+        else if (t.status === 'Generated') generated++;
+        else if (t.status === 'Sent') sent++;
+      });
+
+      const filteredTenants = tenants.filter(t => {
+        const matchesSearch = 
+          (t.tenantName || '').toLowerCase().includes(searchTerm) || 
+          (t.unit || '').toLowerCase().includes(searchTerm);
+          
+        const matchesStatus = (statusValue === 'ALL') || (t.status === statusValue);
+
+        let matchesMonth = true;
+        if (monthValue !== 'ALL') {
+          try {
+            const d = new Date(t.computed20th);
+            if (!isNaN(d)) {
+              const tenantMonthStr = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+              matchesMonth = (tenantMonthStr === monthValue);
+            } else {
+              matchesMonth = false;
+            }
+          } catch(e) {
+            matchesMonth = false;
+          }
+        }
+
+        return matchesSearch && matchesStatus && matchesMonth;
+      });
+
+      if (filteredTenants.length === 0) {
+        spreadsheetBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-4 py-12 text-center text-slate-400">
+              <div class="text-2xl mb-2">🔍</div>
+              No tenants found matching your search/filter.
+            </td>
+          </tr>`;
+      } else {
+        filteredTenants.forEach((tenant) => {
+          const originalIndex = tenants.findIndex(t => t === tenant);
+
+          let badgeClass = 'bg-yellow-100 text-yellow-800';
+          if (tenant.status === 'Generated') badgeClass = 'bg-blue-100 text-blue-800';
+          if (tenant.status === 'Sent') badgeClass = 'bg-green-100 text-green-800';
+
+          let actionBtn = '';
+          if (tenant.status === 'Pending') {
+            actionBtn = `<button onclick="generateSingle(${originalIndex})" class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-900 transition-colors">⚙️ Generate</button>`;
+          } else if (tenant.status === 'Generated') {
+            actionBtn = `<button onclick="markAsSent(${originalIndex})" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition-colors">✅ Mark as Sent</button>`;
+          } else {
+            actionBtn = `<span class="text-xs text-slate-400 font-medium">Completed</span>`;
+          }
+
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="px-4 py-3 font-medium text-slate-800">${tenant.tenantName}</td>
+            <td class="px-4 py-3 text-slate-600">${tenant.unit}</td>
+            <td class="px-4 py-3 text-slate-600 font-medium">${tenant.computed20th}</td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 text-[10px] uppercase tracking-wide rounded-full font-bold ${badgeClass}">
+                ${tenant.status}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-right">
+              ${actionBtn}
+            </td>
+          `;
+          spreadsheetBody.appendChild(tr);
+        });
+      }
+
+      countPending.textContent = `${pending} Pending`;
+      countGenerated.textContent = `${generated} Generated`;
+      countSent.textContent = `${sent} Sent`;
+    }
+
+    // Add Event Listeners for Search & Filter
+    searchInput.addEventListener('input', renderSpreadsheet);
+    statusFilter.addEventListener('change', renderSpreadsheet);
+    monthFilter.addEventListener('change', renderSpreadsheet);
+
+    // PDF GENERATION
+    async function generatePDFDoc(tenant) {
+      try {
+        document.getElementById('outDate').textContent = tenant.date || '';
+        document.getElementById('outTenant').textContent = tenant.tenantName || '';
+        document.getElementById('outBuilding').textContent = tenant.building || '';
+        document.getElementById('outUnit').textContent = tenant.unit || '';
+        document.getElementById('outDay20').textContent = tenant.computed20th || '';
+        document.getElementById('outDay20b').textContent = tenant.computed20th || '';
+        document.getElementById('outDay20c').textContent = tenant.computed20th || '';
+        document.getElementById('outSixthDay').textContent = tenant.sixthDay || '';
+        document.getElementById('outCheckYes').textContent = (tenant.choice && tenant.choice.toUpperCase() === 'YES') ? '[ X ]' : '[   ]';
+        document.getElementById('outCheckNo').textContent = (tenant.choice && tenant.choice.toUpperCase() === 'NO') ? '[ X ]' : '[   ]';
+        document.getElementById('outReason').textContent = tenant.reason || '—';
+        document.getElementById('outSignature1').textContent = tenant.tenantName || '';
+        
+        document.getElementById('outTenant2').textContent = tenant.tenantName || '';
+        document.getElementById('outTermLabel').textContent = tenant.termLabel || '';
+        document.getElementById('outRent').textContent = formatPeso(tenant.rent);
+        document.getElementById('outRent2').textContent = formatPeso(tenant.rent);
+        document.getElementById('outAdvance').textContent = formatPeso((Number(tenant.rent) || 0) * (tenant.termMonths || 12) * 0.2);
+        document.getElementById('outTermMonths').textContent = tenant.termMonths || 12;
+        document.getElementById('outTotalContract').textContent = formatPeso((Number(tenant.rent) || 0) * (tenant.termMonths || 12));
+        document.getElementById('outSignature2').textContent = tenant.tenantName || '';
+      } catch (err) {
+        throw new Error("Failed to populate template data: " + err.message);
+      }
+
+      try {
+        if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+           throw new Error("Required libraries (html2canvas or jsPDF) are not loaded.");
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const page1 = document.getElementById('page-1');
+        const page2 = document.getElementById('page-2');
+
+        const canvas1 = await html2canvas(page1, { scale: 2, useCORS: true, windowWidth: 800 });
+        doc.addImage(canvas1.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, 210, 297);
+
+        doc.addPage();
+        const canvas2 = await html2canvas(page2, { scale: 2, useCORS: true, windowWidth: 800 });
+        doc.addImage(canvas2.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, 210, 297);
+
+        return doc;
+      } catch (err) {
+        throw new Error("Canvas/PDF rendering failed: " + err.message);
+      }
+    }
+
+    // ACTIONS
+    window.generateSingle = async function(index) {
+      const tenant = appData[activeTab][index];
+      
+      loadingOverlay.classList.remove('hidden');
+      loadingOverlay.classList.add('flex');
+      loadingText.textContent = `Generating PDF for ${tenant.tenantName}...`;
+
+      try {
+        const doc = await generatePDFDoc(tenant);
+        const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
+        
+        doc.save(fileName);
+        tenant.generatedDoc = doc; 
+
+        if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+          loadingText.textContent = `Uploading to Drive...`;
+          
+          const monthName = tenant.folderMonth || "Unknown Month";
+          const base64Data = doc.output('datauristring').split(',')[1];
+          
+          await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              fileName: fileName,
+              base64: base64Data,
+              rootFolderId: ROOT_FOLDER_ID,
+              monthName: monthName,
+              tenantName: tenant.tenantName
+            })
+          });
+        }
+
+        tenant.status = 'Generated';
+        saveToStorage(); 
+        renderSpreadsheet();
+      } catch (error) {
+        console.error(error);
+        alert("Error generating PDF: " + error.message);
+      } finally {
+        loadingOverlay.classList.add('hidden');
+        loadingOverlay.classList.remove('flex');
+      }
+    };
+
+    window.markAsSent = function(index) {
+      appData[activeTab][index].status = 'Sent';
+      saveToStorage(); 
+      renderSpreadsheet();
+    };
+
+    document.getElementById('clearCurrentTabBtn').addEventListener('click', () => {
+      if (!activeTab) return;
+      if (confirm(`Are you sure you want to clear all data in the "${activeTab}" tab?`)) {
+        delete appData[activeTab];
+        const remainingTabs = Object.keys(appData);
+        activeTab = remainingTabs.length > 0 ? remainingTabs[0] : null;
+        
+        saveToStorage();
+        renderTabs();
+        renderSpreadsheet();
+      }
+    });
+
+    // EXCEL IMPORT
+    excelInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      loadingOverlay.classList.remove('hidden');
+      loadingOverlay.classList.add('flex');
+      loadingText.textContent = "Reading Excel File...";
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          workbookCache = XLSX.read(data, { type: 'array', cellDates: true });
+          
+          sheetSelect.innerHTML = '';
+          workbookCache.SheetNames.forEach(sheetName => {
+            const option = document.createElement('option');
+            option.value = sheetName;
+            option.textContent = sheetName;
+            sheetSelect.appendChild(option);
+          });
+
+          sheetSelectionArea.classList.remove('hidden');
+
+        } catch (error) {
+          console.error("Excel Parse Error:", error);
+          alert("Error reading the Excel file. It may be corrupted.");
+        } finally {
+          loadingOverlay.classList.add('hidden');
+          loadingOverlay.classList.remove('flex');
+          excelInput.value = ''; 
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    loadSheetBtn.addEventListener('click', () => {
+      if (!workbookCache) return;
+      const selectedSheetName = sheetSelect.value;
+
+      try {
+        const worksheet = workbookCache.Sheets[selectedSheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, { raw: true });
+
+        if (json.length === 0) {
+          alert("The selected sheet is empty.");
+          return;
+        }
+
+        if (!appData[selectedSheetName]) {
+          appData[selectedSheetName] = [];
+        }
+
+        json.forEach(row => {
+          const rowKeys = Object.keys(row).reduce((acc, key) => {
+            acc[key.trim().toUpperCase()] = row[key];
+            return acc;
+          }, {});
+
+          const startContract = rowKeys['START OF CONTRACT'] || '';
+          const term = rowKeys['LEASE TERM'] || '12';
+          const dates = computeDates(startContract, term);
+
+          appData[selectedSheetName].push({
+            date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+            tenantName: rowKeys['NAME'] || 'Unknown',
+            building: rowKeys['BUILDING'] || "Eve's Residences",
+            unit: rowKeys['UNIT'] || '',
+            rent: rowKeys['MONTHLY RENT'] || 0,
+            choice: rowKeys['RESPONSE'] || 'YES',
+            reason: rowKeys['REASON'] || '—',
+            computed20th: dates.computed20th,
+            sixthDay: dates.sixthDay,
+            termMonths: dates.termMonths,
+            termLabel: dates.termLabel,
+            folderMonth: dates.folderMonth, 
+            status: 'Pending'
+          });
+        });
+
+        activeTab = selectedSheetName;
+        searchInput.value = ''; 
+        statusFilter.value = 'ALL'; 
+
+        saveToStorage(); 
+        renderTabs(); 
+        renderSpreadsheet();
+        
+        sheetSelectionArea.classList.add('hidden');
+        workbookCache = null;
+
+      } catch (error) {
+        console.error("Sheet Load Error:", error);
+        alert("Error loading the selected sheet.");
+      }
+    });
+
+    // MANUAL ADD
+    document.getElementById('manualAddBtn').addEventListener('click', () => {
+      const tenantName = document.getElementById('inputTenant').value;
+      if (!tenantName) return alert("Enter Tenant Name");
+
+      if (!activeTab) {
+        activeTab = "Manual Entry";
+        appData[activeTab] = [];
+        renderTabs();
+      }
+
+      const startContract = document.getElementById('inputStartDate').value;
+      const term = document.getElementById('inputTerm').value;
+      const dates = computeDates(startContract, term);
+
+      appData[activeTab].push({
+        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        tenantName: tenantName,
+        building: document.getElementById('inputBuilding').value,
+        unit: document.getElementById('inputUnit').value,
+        rent: document.getElementById('inputRent').value,
+        choice: 'YES',
+        reason: '—',
+        computed20th: dates.computed20th,
+        sixthDay: dates.sixthDay,
+        termMonths: dates.termMonths,
+        termLabel: dates.termLabel,
+        folderMonth: dates.folderMonth, 
+        status: 'Pending'
+      });
+
+      saveToStorage(); 
+      renderSpreadsheet();
+      document.getElementById('inputTenant').value = '';
+    });
+
+    // BATCH GENERATE
+    document.getElementById('batchGenerateBtn').addEventListener('click', async () => {
+      if (!activeTab || !appData[activeTab]) return alert("No active tab.");
+      
+      const pendingTenants = appData[activeTab].filter(t => t.status === 'Pending');
+      if (pendingTenants.length === 0) return alert("No pending tenants in this tab.");
+
+      loadingOverlay.classList.remove('hidden');
+      loadingOverlay.classList.add('flex');
+
+      for (let i = 0; i < pendingTenants.length; i++) {
+        const tenant = pendingTenants[i];
+        loadingText.textContent = `Generating ${i + 1} of ${pendingTenants.length}: ${tenant.tenantName}...`;
+        
+        const doc = await generatePDFDoc(tenant);
+        tenant.generatedDoc = doc;
+        
+        if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+          loadingText.textContent = `Uploading ${i + 1} of ${pendingTenants.length}: ${tenant.tenantName} to Drive...`;
+          
+          const monthName = tenant.folderMonth || "Unknown Month";
+          const base64Data = doc.output('datauristring').split(',')[1];
+
+          await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              fileName: `Lease Renewal - ${tenant.tenantName}.pdf`,
+              base64: base64Data,
+              rootFolderId: ROOT_FOLDER_ID,
+              monthName: monthName,
+              tenantName: tenant.tenantName
+            })
+          });
+        }
+
+        tenant.status = 'Generated';
+        saveToStorage(); 
+        renderSpreadsheet();
+      }
+
+      loadingOverlay.classList.add('hidden');
+      loadingOverlay.classList.remove('flex');
+      alert("Batch generation complete for this tab.");
+    });
+
+    // BATCH ZIP DOWNLOAD
+    document.getElementById('batchDownloadZipBtn').addEventListener('click', async () => {
+      if (!activeTab || !appData[activeTab]) return alert("No active tab.");
+      
+      const generatedTenants = appData[activeTab].filter(t => t.generatedDoc);
+      
+      if (generatedTenants.length === 0) {
+        return alert("No PDFs available to ZIP in this tab currently. If you refreshed the page, you must click 'Generate' again to recreate the files.");
+      }
+
+      loadingOverlay.classList.remove('hidden');
+      loadingOverlay.classList.add('flex');
+      loadingText.textContent = "Zipping files for download...";
+
+      const zip = new JSZip();
+      const zipFolder = zip.folder(`Lease_Renewals_${activeTab}`);
+
+      generatedTenants.forEach(tenant => {
+        const blob = tenant.generatedDoc.output('blob');
+        zipFolder.file(`Lease Renewal - ${tenant.tenantName}.pdf`, blob);
+      });
+
+      const content = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(content);
+      link.download = `Lease_Renewals_${activeTab}.zip`;
+      link.click();
+
+      loadingOverlay.classList.add('hidden');
+      loadingOverlay.classList.remove('flex');
+    });
+
+    // INIT ON LOAD
+    loadFromStorage();
+
+  </script>
+</body>
+</html>
