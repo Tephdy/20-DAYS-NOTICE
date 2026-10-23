@@ -12,7 +12,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <style>
-    body { background-color: #f1f5f9; }
+    body { background-color: #f1f5f9; height: 100vh; overflow: hidden; }
     
     .pdf-page {
       width: 210mm;
@@ -92,9 +92,52 @@
     .tab-scroll::-webkit-scrollbar-track { background: transparent; }
     .tab-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .tab-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    /* Dragging Styles */
+    .dragging {
+      opacity: 0.5;
+      cursor: grabbing !important;
+    }
+
+    /* Microsoft Office Ribbon Styles */
+    .office-tab {
+      padding: 8px 16px;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .office-tab:hover {
+      background-color: #e2e8f0;
+    }
+    .office-tab.active {
+      color: #217346; /* Excel Green */
+      border-bottom-color: #217346;
+      font-weight: 600;
+    }
+    .ribbon-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #333;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .ribbon-btn:hover {
+      background-color: #e2e8f0;
+    }
+    .ribbon-btn .icon {
+      font-size: 24px;
+      margin-bottom: 2px;
+    }
   </style>
 </head>
-<body class="p-4 md:p-8 flex flex-col lg:flex-row gap-8 max-w-[1400px] mx-auto items-start min-h-screen">
+<body class="p-2 md:p-4 flex flex-col w-full h-screen">
 
   <!-- LOADING OVERLAY -->
   <div id="loadingOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex-col items-center justify-center backdrop-blur-sm">
@@ -103,164 +146,236 @@
     <p class="text-slate-300 mt-2">Please wait.</p>
   </div>
 
-  <!-- LEFT SIDEBAR -->
-  <div class="w-full lg:w-1/3 bg-white p-6 rounded-2xl shadow-xl border border-slate-200 sticky top-8 print:hidden">
-    <h2 class="text-2xl font-bold mb-4 text-slate-800">📄 Renewal System</h2>
-    
-    <div class="space-y-4">
+  <!-- MICROSOFT OFFICE STYLE RIBBON HEADER -->
+  <div class="w-full bg-white shadow-sm border border-slate-300 rounded-t-lg mb-2 overflow-hidden shrink-0">
+    <!-- Title Bar -->
+    <div class="bg-[#217346] text-white px-4 py-1 flex justify-between items-center text-sm">
+      <div class="flex items-center gap-4">
+        <span class="font-bold">Lease Renewal Management System</span>
+        <span class="opacity-75 text-xs">Monitoring.xlsx</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="opacity-75 text-xs">Saved to Browser</span>
+        <button class="bg-white text-[#217346] px-3 py-0.5 rounded text-xs font-bold">Share</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-slate-200 bg-slate-50 px-2 pt-1" id="ribbonTabs">
+      <div class="office-tab active" data-target="home">Home</div>
+      <div class="office-tab" data-target="insert">Insert</div>
+      <div class="office-tab" data-target="data">Data</div>
+      <div class="office-tab" data-target="view">View</div>
+    </div>
+
+    <!-- Ribbon Content Areas -->
+    <div class="p-2 bg-white min-h-[80px] flex items-center border-b border-slate-300">
       
-      <!-- EXCEL IMPORT SECTION -->
-      <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl">
-        <h3 class="font-bold text-blue-800 mb-2">1. Import Data</h3>
-        <p class="text-xs text-blue-600 mb-3">Upload an .xlsx file. You can import multiple tabs.</p>
+      <!-- HOME TAB -->
+      <div class="ribbon-content flex gap-4 w-full" id="ribbon-home">
+        <div class="flex flex-col items-center border-r border-slate-200 pr-4">
+          <div class="flex gap-2">
+            <label class="ribbon-btn">
+              <span class="icon text-blue-600">📁</span>
+              Import Excel
+              <input type="file" id="excelInput" accept=".xlsx, .xls" class="hidden">
+            </label>
+          </div>
+          <span class="text-[10px] text-slate-400 mt-1">Data Source</span>
+        </div>
         
-        <label class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer text-sm">
-          📁 Choose Excel File
-          <input type="file" id="excelInput" accept=".xlsx, .xls" class="hidden">
-        </label>
+        <div class="flex flex-col items-center border-r border-slate-200 pr-4">
+          <div class="flex gap-2">
+            <button id="batchGenerateBtn" class="ribbon-btn">
+              <span class="icon text-slate-800">⚙️</span>
+              Generate All
+            </button>
+            <button id="batchDownloadZipBtn" class="ribbon-btn">
+              <span class="icon text-blue-600">📦</span>
+              Download ZIP
+            </button>
+          </div>
+          <span class="text-[10px] text-slate-400 mt-1">Batch Actions</span>
+        </div>
 
-        <!-- Sheet Selection -->
-        <div id="sheetSelectionArea" class="hidden mt-4 pt-4 border-t border-blue-200">
-          <label class="block text-xs font-bold text-blue-800 uppercase mb-1">Select Sheet/Tab to Import</label>
-          <select id="sheetSelect" class="w-full px-3 py-2 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 text-sm bg-white mb-3">
-            <!-- Options injected here -->
-          </select>
-          <button id="loadSheetBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg shadow-md text-sm transition-colors">
-            Add Selected Sheet to System
-          </button>
+        <div class="flex flex-col items-center">
+          <div class="flex gap-2">
+            <button id="exportDriveBtn" class="ribbon-btn">
+              <span class="icon text-indigo-600">☁️</span>
+              Export to Drive
+            </button>
+          </div>
+          <span class="text-[10px] text-slate-400 mt-1">Cloud</span>
         </div>
       </div>
 
-      <div class="relative flex py-2 items-center">
-        <div class="flex-grow border-t border-slate-300"></div>
-        <span class="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold uppercase">Batch Actions</span>
-        <div class="flex-grow border-t border-slate-300"></div>
-      </div>
-
-      <button id="batchGenerateBtn" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
-        ⚙️ Generate All Pending PDFs (Current Tab)
-      </button>
-      <button id="batchDownloadZipBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
-        📦 Download Generated as ZIP (Current Tab)
-      </button>
-
-      <div class="relative flex py-2 items-center mt-4">
-        <div class="flex-grow border-t border-slate-300"></div>
-        <span class="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold uppercase">Manual Entry</span>
-        <div class="flex-grow border-t border-slate-300"></div>
-      </div>
-
-      <details class="bg-slate-50 border border-slate-200 rounded-xl p-4">
-        <summary class="font-bold text-slate-700 cursor-pointer select-none">➕ Add Single Tenant</summary>
-        <div class="space-y-3 mt-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tenant Name</label>
-            <input type="text" id="inputTenant" placeholder="e.g. Joseph Amandy" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm">
+      <!-- INSERT TAB -->
+      <div class="ribbon-content hidden flex gap-4 w-full" id="ribbon-insert">
+        <div class="flex flex-col items-center border-r border-slate-200 pr-4">
+          <div class="flex gap-2">
+            <button id="manualAddBtn" class="ribbon-btn">
+              <span class="icon text-green-600">👤</span>
+              Add Tenant
+            </button>
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Unit</label>
-              <input type="text" id="inputUnit" placeholder="e.g. 4B" class="w-full px-3 py-2 border rounded text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Building</label>
-              <input type="text" id="inputBuilding" value="Eve's Residences" class="w-full px-3 py-2 border rounded text-sm">
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Start of Contract</label>
-            <input type="date" id="inputStartDate" class="w-full px-3 py-2 border rounded text-sm">
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Term</label>
-              <select id="inputTerm" class="w-full px-3 py-2 border rounded text-sm bg-white">
-                <option value="M-M">M-M (Monthly)</option>
-                <option value="6">6 months</option>
-                <option value="12" selected>1 year</option>
-                <option value="24">2 years</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Monthly Rent</label>
-              <input type="number" id="inputRent" value="6000" class="w-full px-3 py-2 border rounded text-sm">
-            </div>
-          </div>
-          <button id="manualAddBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-sm mt-2">Add to Current Tab</button>
+          <span class="text-[10px] text-slate-400 mt-1">Manual Entry</span>
         </div>
-      </details>
+        <div class="flex flex-col justify-center text-xs text-slate-500 px-4">
+          Fill out the form on the left side to manually add a tenant to the current tab.
+        </div>
+      </div>
+
+      <!-- DATA TAB -->
+      <div class="ribbon-content hidden flex gap-4 w-full" id="ribbon-data">
+        <div class="flex flex-col items-center border-r border-slate-200 pr-4">
+          <div class="flex gap-2">
+            <button id="clearCurrentTabBtn" class="ribbon-btn">
+              <span class="icon text-red-600">🗑️</span>
+              Clear Tab
+            </button>
+          </div>
+          <span class="text-[10px] text-slate-400 mt-1">Data Management</span>
+        </div>
+        <div class="flex flex-col justify-center text-xs text-slate-500 px-4">
+          Use the search and filter bar below the tabs to navigate your data.
+        </div>
+      </div>
+
+      <!-- VIEW TAB -->
+      <div class="ribbon-content hidden flex gap-4 w-full" id="ribbon-view">
+        <div class="flex flex-col justify-center text-xs text-slate-500 px-4 w-full text-center">
+          Drag and drop the tabs (e.g., ECO, RESIDENTIAL) below the spreadsheet to reorder them.
+        </div>
+      </div>
 
     </div>
   </div>
 
-  <!-- RIGHT AREA: MONITORING SPREADSHEET -->
-  <div class="w-full lg:w-2/3 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col h-[85vh]">
+  <!-- Sheet Selection (Hidden until import) -->
+  <div id="sheetSelectionArea" class="hidden w-full mb-2 bg-yellow-50 border border-yellow-200 p-2 rounded-lg flex items-center gap-4 shrink-0">
+    <label class="text-sm font-bold text-yellow-800">Select Sheet to Import:</label>
+    <select id="sheetSelect" class="px-3 py-1 border border-yellow-300 rounded text-sm bg-white">
+      <!-- Options injected here -->
+    </select>
+    <button id="confirmLoadSheetBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-bold px-4 py-1 rounded">Load</button>
+  </div>
+
+  <!-- MAIN CONTAINER (Full Height) -->
+  <div class="w-full flex flex-col lg:flex-row gap-2 items-stretch flex-1 min-h-0">
     
-    <!-- Header & Tabs -->
-    <div class="p-6 border-b border-slate-200 bg-slate-50 rounded-t-2xl flex flex-col gap-4">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <!-- LEFT SIDEBAR (Manual Form) - Made narrower (w-80) -->
+    <div class="w-full lg:w-80 bg-white p-4 rounded-2xl shadow-xl border border-slate-200 flex flex-col h-full shrink-0">
+      <h2 class="text-lg font-bold mb-2 text-slate-800 border-b pb-2 shrink-0">➕ Add Single Tenant</h2>
+      
+      <!-- Scrollable Form Content -->
+      <div class="overflow-y-auto flex-1 pr-1 space-y-3">
         <div>
-          <h3 class="text-xl font-bold text-slate-800">Monitoring Spreadsheet</h3>
-          <p class="text-sm text-slate-500">Data is saved automatically in your browser.</p>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tenant Name</label>
+          <input type="text" id="inputTenant" placeholder="e.g. Joseph Amandy" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm">
         </div>
-        
-        <div class="flex flex-wrap gap-2 items-center">
-          <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full" id="countPending">0 Pending</span>
-          <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full" id="countGenerated">0 Generated</span>
-          <span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full" id="countSent">0 Sent</span>
-          <button id="clearCurrentTabBtn" class="ml-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold px-3 py-1 rounded-full transition-colors" title="Clear data for current tab only">🗑️ Clear Current Tab</button>
-        </div>
-      </div>
-
-      <!-- Dynamic Tabs Container -->
-      <div id="tabsContainer" class="flex items-center gap-2 overflow-x-auto tab-scroll pb-1">
-        <!-- Tabs injected here -->
-      </div>
-
-      <!-- SEARCH & FILTER BAR -->
-      <div class="flex flex-col sm:flex-row gap-3 mt-2">
-        <!-- Search Input -->
-        <div class="flex-1 relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Unit</label>
+            <input type="text" id="inputUnit" placeholder="e.g. 4B" class="w-full px-3 py-2 border rounded text-sm">
           </div>
-          <input type="text" id="searchInput" placeholder="Search Name or Unit..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Building</label>
+            <input type="text" id="inputBuilding" value="Eve's Residences" class="w-full px-3 py-2 border rounded text-sm">
+          </div>
         </div>
-        
-        <!-- Month Filter -->
-        <select id="monthFilter" class="w-full sm:w-44 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white">
-          <option value="ALL">All Months</option>
-          <!-- Options injected by JS -->
-        </select>
-
-        <!-- Status Filter -->
-        <select id="statusFilter" class="w-full sm:w-40 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white">
-          <option value="ALL">All Statuses</option>
-          <option value="Pending">Pending Only</option>
-          <option value="Generated">Generated Only</option>
-          <option value="Sent">Sent Only</option>
-        </select>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Start of Contract</label>
+          <input type="date" id="inputStartDate" class="w-full px-3 py-2 border rounded text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Term</label>
+            <select id="inputTerm" class="w-full px-3 py-2 border rounded text-sm bg-white">
+              <option value="M-M">M-M (Monthly)</option>
+              <option value="6">6 months</option>
+              <option value="12" selected>1 year</option>
+              <option value="24">2 years</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Monthly Rent</label>
+            <input type="number" id="inputRent" value="6000" class="w-full px-3 py-2 border rounded text-sm">
+          </div>
+        </div>
+      </div>
+      
+      <div class="shrink-0 mt-2 pt-2 border-t">
+        <button id="manualAddBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-sm shadow-sm">Add to Current Tab</button>
       </div>
     </div>
-    
-    <!-- Table -->
-    <div class="overflow-auto flex-1 p-0">
-      <table class="w-full text-left border-collapse">
-        <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-bold sticky top-0 shadow-sm z-10">
-          <tr>
-            <th class="px-4 py-3 border-b">Tenant Name</th>
-            <th class="px-4 py-3 border-b">Unit</th>
-            <th class="px-4 py-3 border-b">Computed Due Date</th>
-            <th class="px-4 py-3 border-b">Status</th>
-            <th class="px-4 py-3 border-b text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="spreadsheetBody" class="divide-y divide-slate-100 text-sm">
-          <!-- Rows injected dynamically -->
-        </tbody>
-      </table>
+
+    <!-- RIGHT AREA: SPREADSHEET - Flex-1 takes remaining space -->
+    <div class="w-full lg:flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col h-full flex-1 min-h-0">
+      
+      <!-- Header & Tabs -->
+      <div class="p-4 border-b border-slate-200 bg-slate-50 rounded-t-2xl flex flex-col gap-2 shrink-0">
+        
+        <!-- CENTERED STACKED LAYOUT -->
+        <div class="flex flex-col items-center justify-center text-center gap-1">
+          <div>
+            <h3 class="text-lg font-bold text-slate-800">Monitoring Spreadsheet</h3>
+            <p class="text-xs text-slate-500">Data is saved automatically in your browser.</p>
+          </div>
+          
+          <!-- Status Badges (Horizontal) -->
+          <div class="flex flex-row gap-2 mt-1">
+            <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full" id="countPending">0 Pending</span>
+            <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full" id="countGenerated">0 Generated</span>
+            <span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full" id="countSent">0 Sent</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Tabs Container (Draggable) -->
+        <div id="tabsContainer" class="flex items-center gap-2 overflow-x-auto tab-scroll pb-1 mt-2">
+          <!-- Tabs injected here -->
+        </div>
+
+        <!-- SEARCH & FILTER BAR -->
+        <div class="flex flex-col sm:flex-row gap-2 mt-1">
+          <div class="flex-1 relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <input type="text" id="searchInput" placeholder="Search Name or Unit..." class="w-full pl-9 pr-4 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+          </div>
+          
+          <select id="monthFilter" class="w-full sm:w-40 px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+            <option value="ALL">All Months</option>
+          </select>
+
+          <select id="statusFilter" class="w-full sm:w-36 px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+            <option value="ALL">All Statuses</option>
+            <option value="Pending">Pending Only</option>
+            <option value="Generated">Generated Only</option>
+            <option value="Sent">Sent Only</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Table (Flexible area to fill remaining height) -->
+      <div class="overflow-auto flex-1 p-0 min-h-0">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-bold sticky top-0 shadow-sm z-10">
+            <tr>
+              <th class="px-4 py-2 border-b">Tenant Name</th>
+              <th class="px-4 py-2 border-b">Unit</th>
+              <th class="px-4 py-2 border-b">Computed Due Date</th>
+              <th class="px-4 py-2 border-b">Status</th>
+              <th class="px-4 py-2 border-b text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="spreadsheetBody" class="divide-y divide-slate-100 text-sm">
+            <!-- Rows injected dynamically -->
+          </tbody>
+        </table>
+      </div>
+      
     </div>
-    
   </div>
 
   <!-- HIDDEN PDF TEMPLATE -->
@@ -405,10 +520,25 @@
     const ROOT_FOLDER_ID = '16qLfbrPeU-H_UH0QUl2lIqUoqf5_nVLQ'; 
     // ==========================================
 
+    // --- OFFICE RIBBON LOGIC ---
+    const tabs = document.querySelectorAll('.office-tab');
+    const contents = document.querySelectorAll('.ribbon-content');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        contents.forEach(c => c.classList.add('hidden'));
+        
+        tab.classList.add('active');
+        document.getElementById(`ribbon-${tab.dataset.target}`).classList.remove('hidden');
+      });
+    });
+
     // SYSTEM STATE & STORAGE
     let appData = {};
     let activeTab = null;
     let workbookCache = null;
+    let draggedTabName = null; 
 
     const STORAGE_KEY = 'leaseRenewalMultiTabData';
 
@@ -420,8 +550,10 @@
     const sheetSelectionArea = document.getElementById('sheetSelectionArea');
     const sheetSelect = document.getElementById('sheetSelect');
     const loadSheetBtn = document.getElementById('loadSheetBtn');
+    const confirmLoadSheetBtn = document.getElementById('confirmLoadSheetBtn');
     const clearCurrentTabBtn = document.getElementById('clearCurrentTabBtn');
     const tabsContainer = document.getElementById('tabsContainer');
+    const exportDriveBtn = document.getElementById('exportDriveBtn');
     
     // Search & Filter Elements
     const searchInput = document.getElementById('searchInput');
@@ -453,7 +585,6 @@
       }
 
       if (!isNaN(startD.getTime())) {
-        // Check for Monthly variants
         const termString = String(term).toUpperCase().trim();
         const isMonthly = 
           termString === 'M-M' || 
@@ -537,13 +668,16 @@
         const isActive = tabName === activeTab;
         const tabBtn = document.createElement('button');
         
-        tabBtn.className = `px-4 py-2 rounded-t-lg font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${
+        tabBtn.className = `px-4 py-2 rounded-t-lg font-bold text-sm transition-colors border-b-2 whitespace-nowrap cursor-grab ${
           isActive 
           ? 'bg-white border-blue-600 text-blue-700 shadow-sm' 
           : 'bg-slate-200 border-transparent text-slate-600 hover:bg-slate-300'
         }`;
         tabBtn.textContent = tabName;
         
+        tabBtn.draggable = true;
+        tabBtn.dataset.tabName = tabName;
+
         tabBtn.addEventListener('click', () => {
           activeTab = tabName;
           searchInput.value = ''; 
@@ -551,14 +685,62 @@
           renderTabs();
           renderSpreadsheet();
         });
-        
+
+        tabBtn.addEventListener('dragstart', (e) => {
+          draggedTabName = tabName;
+          tabBtn.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        tabBtn.addEventListener('dragend', () => {
+          tabBtn.classList.remove('dragging');
+          draggedTabName = null;
+        });
+
+        tabBtn.addEventListener('dragover', (e) => {
+          e.preventDefault(); 
+        });
+
+        tabBtn.addEventListener('dragenter', (e) => {
+          e.preventDefault();
+          if (tabName !== draggedTabName) {
+            tabBtn.classList.add('bg-slate-300');
+          }
+        });
+
+        tabBtn.addEventListener('dragleave', () => {
+          tabBtn.classList.remove('bg-slate-300');
+        });
+
+        tabBtn.addEventListener('drop', (e) => {
+          e.preventDefault();
+          tabBtn.classList.remove('bg-slate-300');
+          
+          if (!draggedTabName || draggedTabName === tabName) return;
+
+          const newAppData = {};
+          const keys = Object.keys(appData);
+          
+          keys.forEach(key => {
+            if (key === tabName) {
+              newAppData[draggedTabName] = appData[draggedTabName];
+            }
+            if (key !== draggedTabName) {
+              newAppData[key] = appData[key];
+            }
+          });
+
+          appData = newAppData;
+          saveToStorage();
+          renderTabs(); 
+        });
+
         tabsContainer.appendChild(tabBtn);
       });
     }
 
     // POPULATE MONTH FILTER DROPDOWN
     function populateMonthFilter() {
-      // Clear old options except "All Months"
       monthFilter.innerHTML = '<option value="ALL">All Months</option>';
       
       if (!activeTab || !appData[activeTab]) return;
@@ -671,7 +853,12 @@
           if (tenant.status === 'Pending') {
             actionBtn = `<button onclick="generateSingle(${originalIndex})" class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-900 transition-colors">⚙️ Generate</button>`;
           } else if (tenant.status === 'Generated') {
-            actionBtn = `<button onclick="markAsSent(${originalIndex})" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition-colors">✅ Mark as Sent</button>`;
+            actionBtn = `
+              <div class="flex justify-end gap-1">
+                <button onclick="regenerateSingle(${originalIndex})" class="bg-slate-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 transition-colors" title="Re-generate and overwrite Drive file">↻ Regenerate</button>
+                <button onclick="markAsSent(${originalIndex})" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition-colors">✅ Mark as Sent</button>
+              </div>
+            `;
           } else {
             actionBtn = `<span class="text-xs text-slate-400 font-medium">Completed</span>`;
           }
@@ -775,6 +962,7 @@
           loadingText.textContent = `Uploading to Drive...`;
           
           const monthName = tenant.folderMonth || "Unknown Month";
+          const propertyName = tenant.building || "Unknown Property";
           const base64Data = doc.output('datauristring').split(',')[1];
           
           await fetch(APPS_SCRIPT_URL, {
@@ -783,6 +971,7 @@
               fileName: fileName,
               base64: base64Data,
               rootFolderId: ROOT_FOLDER_ID,
+              propertyName: propertyName,
               monthName: monthName,
               tenantName: tenant.tenantName
             })
@@ -801,11 +990,130 @@
       }
     };
 
+    // REGENERATE ACTION
+    window.regenerateSingle = async function(index) {
+      const tenant = appData[activeTab][index];
+      
+      loadingOverlay.classList.remove('hidden');
+      loadingOverlay.classList.add('flex');
+      loadingText.textContent = `Regenerating PDF for ${tenant.tenantName}...`;
+
+      try {
+        const doc = await generatePDFDoc(tenant);
+        const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
+        
+        doc.save(fileName);
+        tenant.generatedDoc = doc; 
+
+        if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+          loadingText.textContent = `Re-uploading to Drive...`;
+          
+          const monthName = tenant.folderMonth || "Unknown Month";
+          const propertyName = tenant.building || "Unknown Property";
+          const base64Data = doc.output('datauristring').split(',')[1];
+          
+          await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              fileName: fileName,
+              base64: base64Data,
+              rootFolderId: ROOT_FOLDER_ID,
+              propertyName: propertyName,
+              monthName: monthName,
+              tenantName: tenant.tenantName
+            })
+          });
+        }
+        
+        renderSpreadsheet();
+      } catch (error) {
+        console.error(error);
+        alert("Error regenerating PDF: " + error.message);
+      } finally {
+        loadingOverlay.classList.add('hidden');
+        loadingOverlay.classList.remove('flex');
+      }
+    };
+
     window.markAsSent = function(index) {
       appData[activeTab][index].status = 'Sent';
       saveToStorage(); 
       renderSpreadsheet();
     };
+
+    // EXPORT TO DRIVE
+    exportDriveBtn.addEventListener('click', async () => {
+      if (Object.keys(appData).length === 0) {
+        return alert("No data to export.");
+      }
+      if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+        return alert("Please configure your Google Apps Script URL first.");
+      }
+
+      loadingOverlay.classList.remove('hidden');
+      loadingOverlay.classList.add('flex');
+      loadingText.textContent = "Preparing Excel Export...";
+
+      try {
+        // Create a new Workbook
+        const wb = XLSX.utils.book_new();
+
+        // Loop through all tabs and add them as separate sheets
+        for (const tabName in appData) {
+          const tenants = appData[tabName];
+          
+          // Format data for Excel
+          const excelData = tenants.map(t => ({
+            "Tenant Name": t.tenantName || '',
+            "Unit": t.unit || '',
+            "Building": t.building || '',
+            "Computed Due Date": t.computed20th || '',
+            "Monthly Rent": t.rent || 0,
+            "Status": t.status || ''
+          }));
+
+          // Create worksheet
+          const ws = XLSX.utils.json_to_sheet(excelData);
+          
+          // Append to workbook
+          XLSX.utils.book_append_sheet(wb, ws, tabName);
+        }
+
+        // Generate Base64 string of the XLSX file
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+        
+        const fileName = `Lease_Renewals_Master_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+        loadingText.textContent = "Uploading Excel to Drive...";
+
+        const payload = {
+          action: 'export',
+          fileName: fileName,
+          base64: wbout,
+          rootFolderId: ROOT_FOLDER_ID
+        };
+
+        const response = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        const res = await response.json();
+
+        if (res.success) {
+          alert(`Successfully exported all tabs to Google Drive!\n\nView Link: ${res.fileUrl}`);
+        } else {
+          alert('Export failed: ' + res.error);
+        }
+
+      } catch (error) {
+        console.error(error);
+        alert("Error exporting data: " + error.message);
+      } finally {
+        loadingOverlay.classList.add('hidden');
+        loadingOverlay.classList.remove('flex');
+      }
+    });
 
     document.getElementById('clearCurrentTabBtn').addEventListener('click', () => {
       if (!activeTab) return;
@@ -857,7 +1165,7 @@
       reader.readAsArrayBuffer(file);
     });
 
-    loadSheetBtn.addEventListener('click', () => {
+    confirmLoadSheetBtn.addEventListener('click', () => {
       if (!workbookCache) return;
       const selectedSheetName = sheetSelect.value;
 
@@ -975,6 +1283,7 @@
           loadingText.textContent = `Uploading ${i + 1} of ${pendingTenants.length}: ${tenant.tenantName} to Drive...`;
           
           const monthName = tenant.folderMonth || "Unknown Month";
+          const propertyName = tenant.building || "Unknown Property";
           const base64Data = doc.output('datauristring').split(',')[1];
 
           await fetch(APPS_SCRIPT_URL, {
@@ -983,6 +1292,7 @@
               fileName: `Lease Renewal - ${tenant.tenantName}.pdf`,
               base64: base64Data,
               rootFolderId: ROOT_FOLDER_ID,
+              propertyName: propertyName,
               monthName: monthName,
               tenantName: tenant.tenantName
             })
