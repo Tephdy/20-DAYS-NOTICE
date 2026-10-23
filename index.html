@@ -425,6 +425,19 @@
 
         if (res.success) {
           appData = res.data;
+          
+          // FORMAT DATES ON LOAD (Fixes the ISO string issue)
+          for (const tabName in appData) {
+            appData[tabName].forEach(tenant => {
+              if (tenant.computed20th) {
+                const d = new Date(tenant.computed20th);
+                if (!isNaN(d.getTime())) {
+                  tenant.computed20th = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                }
+              }
+            });
+          }
+
           const tabNames = Object.keys(appData);
           if (tabNames.length > 0) {
             activeTab = tabNames[0];
