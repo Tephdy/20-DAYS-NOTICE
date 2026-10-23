@@ -46,7 +46,6 @@
     .ribbon-btn:hover { background-color: #e2e8f0; }
     .ribbon-btn svg { width: 24px; height: 24px; margin-bottom: 2px; }
     
-    /* Styling for the date input inside the table */
     input[type="date"].table-date-input {
       border: 1px solid transparent;
       background: transparent;
@@ -66,8 +65,6 @@
       border-color: #3b82f6;
       background: #fff;
     }
-
-    /* Styling for the disabled date input */
     input[type="date"].table-date-input:disabled {
       background: transparent;
       color: #cbd5e1;
@@ -81,14 +78,12 @@
 </head>
 <body class="p-2 md:p-4 flex flex-col w-full h-screen">
 
-  <!-- LOADING OVERLAY -->
   <div id="loadingOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex-col items-center justify-center backdrop-blur-sm">
     <div class="spinner mb-4"></div>
     <h2 id="loadingText" class="text-white text-xl font-bold">Syncing Database...</h2>
     <p class="text-slate-300 mt-2">Communicating with Google Sheets.</p>
   </div>
 
-  <!-- OFFICE RIBBON HEADER -->
   <div class="w-full bg-white shadow-sm border border-slate-300 rounded-t-lg mb-2 overflow-hidden shrink-0">
     <div class="bg-[#217346] text-white px-4 py-1 flex justify-between items-center text-sm">
       <div class="flex items-center gap-4">
@@ -163,6 +158,16 @@
           </div>
           <span class="text-[10px] text-slate-400 mt-1">Data Management</span>
         </div>
+        
+        <div class="flex flex-col items-center pl-4">
+          <div class="flex gap-2">
+            <button id="recalculateDatesBtn" class="ribbon-btn">
+              <svg class="text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              Recalculate Dates
+            </button>
+          </div>
+          <span class="text-[10px] text-slate-400 mt-1">Sync Formulas</span>
+        </div>
       </div>
 
       <div class="ribbon-content hidden flex gap-4 w-full" id="ribbon-view">
@@ -182,7 +187,6 @@
 
   <div class="w-full flex flex-col lg:flex-row gap-2 items-stretch flex-1 min-h-0">
     
-    <!-- LEFT SIDEBAR -->
     <div class="w-full lg:w-80 bg-white p-4 rounded-2xl shadow-xl border border-slate-200 flex flex-col h-full shrink-0">
       <h2 class="text-lg font-bold mb-2 text-slate-800 border-b pb-2 shrink-0 flex items-center gap-2">
         <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -230,7 +234,6 @@
       </div>
     </div>
 
-    <!-- RIGHT AREA: SPREADSHEET -->
     <div class="w-full lg:flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col h-full flex-1 min-h-0">
       
       <div class="p-4 border-b border-slate-200 bg-slate-50 rounded-t-2xl flex flex-col gap-2 shrink-0">
@@ -287,70 +290,33 @@
     </div>
   </div>
 
-  <!-- HIDDEN PDF TEMPLATE -->
   <div id="pdf-template" style="position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none;">
-    <!-- PAGE 1 -->
     <div id="page-1" class="pdf-page relative">
       <div class="w-full flex justify-center mb-8">
         <img src="img/1.png" alt="Logo" style="max-height: 80px;" onerror="this.style.display='none'">
       </div>
-      
-      <div class="text-center font-bold text-[17px] uppercase mb-6 tracking-wide">
-        20‑DAY NOTICE & ADVANCE AGREEMENT FOR RENEWAL OF CONTRACT
-      </div>
-
+      <div class="text-center font-bold text-[17px] uppercase mb-6 tracking-wide">20‑DAY NOTICE & ADVANCE AGREEMENT FOR RENEWAL OF CONTRACT</div>
       <div class="font-bold text-[16px] mb-2">Letter of Intent</div>
-      
       <div class="flex flex-wrap justify-between mb-4">
         <span>Date: <span id="outDate"></span></span>
         <span>Tenant Name: <span id="outTenant"></span></span>
         <span>Building: <span id="outBuilding"></span></span>
         <span>Unit: <span id="outUnit"></span></span>
       </div>
-
-      <p class="mb-4">
-        This serves as your official 20‑day notice prior to the expiration of your current Lease Contract on: <strong id="outDay20"></strong>. Please be guided by the following terms and conditions regarding contract renewal:
-      </p>
-
+      <p class="mb-4">This serves as your official 20‑day notice prior to the expiration of your current Lease Contract on: <strong id="outDay20"></strong>. Please be guided by the following terms and conditions regarding contract renewal:</p>
       <div class="font-bold text-[16px] uppercase mt-6 mb-3">TERMS AND CONDITIONS</div>
-      
       <div>
-        <div class="list-item">
-          <span class="num">1.</span><strong>Contract Signing Period</strong> – The tenant must sign the renewal contract on or before the 20th day prior to the end of the current contract period.
-        </div>
-        <div class="list-item">
-          <span class="num">2.</span><strong>Non-Renewal Notice</strong> – If the tenant does not wish to renew, a written notice of non-renewal must be submitted to Management through official Messenger communication on or before the 20th day prior to contract expiration.
-          <div class="ml-6 mt-1">a. Your 20th day will fall on: <span id="outDay20b"></span></div>
-        </div>
-        <div class="list-item">
-          <span class="num">3.</span><strong>Failure to Comply (Grace Period: 5 Days After the 20th Day)</strong> – If the tenant fails to confirm renewal or non-renewal within five (5) days after the 20th day, a penalty shall apply starting on the 6th day.
-          <div class="ml-6 mt-1">a. Penalty start date (6th day): <strong id="outSixthDay"></strong></div>
-          <div class="ml-6">b. A penalty of ₱500.00 per day shall be imposed until the tenant provides written confirmation.</div>
-        </div>
-        <div class="list-item">
-          <span class="num">4.</span><strong>Management Right to Market the Unit</strong> – After the grace period and prior to contract expiration, Management reserves the right to market and offer the unit to prospective tenants if no confirmation has been received.
-        </div>
-        <div class="list-item">
-          <span class="num">5.</span><strong>Deduction from Security Deposit</strong> – Management reserves the right to deduct all applicable penalties and charges from the tenant's Security Deposit without further notice.
-        </div>
-        <div class="list-item">
-          <span class="num">6.</span><strong>Management Discretion on Renewal</strong> – Renewal is not automatic and is subject to Management approval based on the tenant's compliance, conduct, and payment history.
-        </div>
-        <div class="list-item">
-          <span class="num">7.</span><strong>No Further Reminder Clause</strong> – The 20-day notice period shall not require any further reminder. The tenant is fully aware and responsible for compliance within the prescribed period.
-        </div>
-        <div class="list-item">
-          <span class="num">8.</span><strong>Withdrawal After Confirmation</strong> – If the tenant confirms renewal but later withdraws or fails to proceed, Management reserves the right to charge 20% of the total Security Deposit.
-        </div>
-        <div class="list-item">
-          <span class="num">9.</span><strong>Contract Signing Location</strong> – All lease renewals shall be signed exclusively at: Eve's Residences Office #69 Matahimik St., Riverside II, Santo Domingo, Cainta, Rizal.
-        </div>
-        <div class="list-item">
-          <span class="num">10.</span><strong>Advance Payment and Management Discretion</strong> – If the tenant chooses to renew the lease contract, the tenant shall be required to pay an amount equivalent to twenty percent (20%) of the total contract value, based on the selected lease term and monthly rental rate. This amount shall be paid prior to contract signing and shall form part of the lease payment. The tenant shall also pay an Occupancy Support Fee of ₱298.00 per month.
-          <div class="ml-6 mt-1">a. Management reserves the right to amend, modify, or update policies and terms at its sole discretion as necessary for operational and administrative purposes.</div>
-        </div>
+        <div class="list-item"><span class="num">1.</span><strong>Contract Signing Period</strong> – The tenant must sign the renewal contract on or before the 20th day prior to the end of the current contract period.</div>
+        <div class="list-item"><span class="num">2.</span><strong>Non-Renewal Notice</strong> – If the tenant does not wish to renew, a written notice of non-renewal must be submitted to Management through official Messenger communication on or before the 20th day prior to contract expiration.<div class="ml-6 mt-1">a. Your 20th day will fall on: <span id="outDay20b"></span></div></div>
+        <div class="list-item"><span class="num">3.</span><strong>Failure to Comply (Grace Period: 5 Days After the 20th Day)</strong> – If the tenant fails to confirm renewal or non-renewal within five (5) days after the 20th day, a penalty shall apply starting on the 6th day.<div class="ml-6 mt-1">a. Penalty start date (6th day): <strong id="outSixthDay"></strong></div><div class="ml-6">b. A penalty of ₱500.00 per day shall be imposed until the tenant provides written confirmation.</div></div>
+        <div class="list-item"><span class="num">4.</span><strong>Management Right to Market the Unit</strong> – After the grace period and prior to contract expiration, Management reserves the right to market and offer the unit to prospective tenants if no confirmation has been received.</div>
+        <div class="list-item"><span class="num">5.</span><strong>Deduction from Security Deposit</strong> – Management reserves the right to deduct all applicable penalties and charges from the tenant's Security Deposit without further notice.</div>
+        <div class="list-item"><span class="num">6.</span><strong>Management Discretion on Renewal</strong> – Renewal is not automatic and is subject to Management approval based on the tenant's compliance, conduct, and payment history.</div>
+        <div class="list-item"><span class="num">7.</span><strong>No Further Reminder Clause</strong> – The 20-day notice period shall not require any further reminder. The tenant is fully aware and responsible for compliance within the prescribed period.</div>
+        <div class="list-item"><span class="num">8.</span><strong>Withdrawal After Confirmation</strong> – If the tenant confirms renewal but later withdraws or fails to proceed, Management reserves the right to charge 20% of the total Security Deposit.</div>
+        <div class="list-item"><span class="num">9.</span><strong>Contract Signing Location</strong> – All lease renewals shall be signed exclusively at: Eve's Residences Office #69 Matahimik St., Riverside II, Santo Domingo, Cainta, Rizal.</div>
+        <div class="list-item"><span class="num">10.</span><strong>Advance Payment and Management Discretion</strong> – If the tenant chooses to renew the lease contract, the tenant shall be required to pay an amount equivalent to twenty percent (20%) of the total contract value, based on the selected lease term and monthly rental rate. This amount shall be paid prior to contract signing and shall form part of the lease payment. The tenant shall also pay an Occupancy Support Fee of ₱298.00 per month.<div class="ml-6 mt-1">a. Management reserves the right to amend, modify, or update policies and terms at its sole discretion as necessary for operational and administrative purposes.</div></div>
       </div>
-
       <div class="font-bold text-[16px] mt-8 mb-2">TENANT RESPONSE</div>
       <div>Please check one ( )</div>
       <div class="mt-3 space-y-1 font-bold">
@@ -358,19 +324,14 @@
         <div><span id="outCheckNo"></span> NO, I WILL NOT RENEW MY CONTRACT</div>
       </div>
       <div class="mt-4"><strong>Reason:</strong> <span id="outReason"></span></div>
-
       <div class="mt-16 w-[250px]">
         <div class="border-t-2 border-black pt-1 text-center"><span id="outSignature1"></span></div>
         <div class="text-center text-sm mt-1">Tenant's Signature</div>
       </div>
     </div>
 
-    <!-- PAGE 2 -->
     <div id="page-2" class="pdf-page relative">
-      <p class="mb-3">
-        I, <strong><span id="outTenant2"></span></strong>, hereby express my intent to renew my lease contract with Eve's Residences for the period of: <strong><span id="outTermLabel"></span></strong>
-      </p>
-
+      <p class="mb-3">I, <strong><span id="outTenant2"></span></strong>, hereby express my intent to renew my lease contract with Eve's Residences for the period of: <strong><span id="outTermLabel"></span></strong></p>
       <table class="form-table">
         <tr>
           <td class="font-bold text-[16px]">From:</td>
@@ -379,41 +340,23 @@
           <td class="line-cell"></td>
         </tr>
       </table>
-
-      <p class="mb-6">
-        at the rate of <strong><span id="outRent"></span></strong> per month, plus ₱298.00 monthly Occupancy Support Fee. My current contract will expire on <strong><span id="outDay20c"></span></strong>, under the terms and conditions stated in the renewal notice issued by Management.
-      </p>
-
+      <p class="mb-6">at the rate of <strong><span id="outRent"></span></strong> per month, plus ₱298.00 monthly Occupancy Support Fee. My current contract will expire on <strong><span id="outDay20c"></span></strong>, under the terms and conditions stated in the renewal notice issued by Management.</p>
       <div class="font-bold text-[16px] uppercase mt-6 mb-3">ADDITIONAL CONDITIONS</div>
-      
       <div>
-        <div class="list-item">
-          <span class="num">1.</span>Contract signing shall be conducted exclusively at the Eve's Residences Office stated above.
-        </div>
-        <div class="list-item">
-          <span class="num">2.</span>No contract signing means no renewal will take effect.
-        </div>
-        <div class="list-item">
-          <span class="num">3.</span>Management implements rules and penalties for tenants who fail to confirm their intent.
-        </div>
-        <div class="list-item">
-          <span class="num">4.</span>Failure to confirm may result in penalties and the unit being offered to other tenants.
-        </div>
-        <div class="list-item">
-          <span class="num">5.</span><strong>DIGITAL DOCUMENTS AND INTENT LETTER CLAUSE:</strong> All lease-related documents may be executed electronically and shall be considered valid and legally binding under Republic Act No. 8792 (Electronic Commerce Act of the Philippines).
-        </div>
+        <div class="list-item"><span class="num">1.</span>Contract signing shall be conducted exclusively at the Eve's Residences Office stated above.</div>
+        <div class="list-item"><span class="num">2.</span>No contract signing means no renewal will take effect.</div>
+        <div class="list-item"><span class="num">3.</span>Management implements rules and penalties for tenants who fail to confirm their intent.</div>
+        <div class="list-item"><span class="num">4.</span>Failure to confirm may result in penalties and the unit being offered to other tenants.</div>
+        <div class="list-item"><span class="num">5.</span><strong>DIGITAL DOCUMENTS AND INTENT LETTER CLAUSE:</strong> All lease-related documents may be executed electronically and shall be considered valid and legally binding under Republic Act No. 8792 (Electronic Commerce Act of the Philippines).</div>
       </div>
-
       <div class="my-6">
         <strong>Advance payment (20% of total contract value):</strong> <span id="outAdvance"></span><br>
         <span class="text-[15px] text-slate-800 italic">(based on <span id="outRent2"></span>/month × <span id="outTermMonths"></span> months = <span id="outTotalContract"></span>)</span>
       </div>
-
       <div class="mt-16 w-[250px]">
         <div class="border-t-2 border-black pt-1 text-center"><span id="outSignature2"></span></div>
         <div class="text-center text-sm mt-1">Tenant's Signature</div>
       </div>
-
       <div class="mt-10 text-[15px] bg-slate-50 p-4 rounded border border-slate-200 italic">
         <strong>NOTICE VALIDITY</strong><br>
         This document is considered valid even without signature and becomes effective upon sending through the tenant's registered Messenger or official communication channel. (Ang dokumentong ito ay may bisa kahit walang pirma sa oras na ito ay naipadala sa inyong opisyal na Messenger o contact channel.) This document forms part of the Lease Agreement.
@@ -422,14 +365,13 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCKyFTO91q-Jh7kS5n0F62S1WguGdwFc2bI0XT1zlIvXkr6NbSQw2JKZP70I0VJqPa/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzeMXYhjhnP0Wg6hTohryh28SN2rHmSiRLRTm6Cx6OJxzNwIG2SpaDslofrjxsYy7ti/exec';
     const ROOT_FOLDER_ID = '16qLfbrPeU-H_UH0QUl2lIqUoqf5_nVLQ'; 
 
     let appData = {};
     let activeTab = null;
     let workbookCache = null;
 
-    // --- OFFICE RIBBON LOGIC ---
     const tabs = document.querySelectorAll('.office-tab');
     const contents = document.querySelectorAll('.ribbon-content');
 
@@ -437,13 +379,11 @@
       tab.addEventListener('click', () => {
         tabs.forEach(t => t.classList.remove('active'));
         contents.forEach(c => c.classList.add('hidden'));
-        
         tab.classList.add('active');
         document.getElementById(`ribbon-${tab.dataset.target}`).classList.remove('hidden');
       });
     });
 
-    // --- INITIALIZE DATABASE ---
     async function initDatabase() {
       document.getElementById('loadingOverlay').classList.remove('hidden');
       document.getElementById('loadingOverlay').classList.add('flex');
@@ -458,19 +398,21 @@
 
         if (res.success) {
           appData = res.data;
-          
-          // NORMALIZE DATA ON LOAD
           for (const tabName in appData) {
             if (!Array.isArray(appData[tabName])) continue;
             appData[tabName].forEach(tenant => {
-              tenant.pdfUrl = tenant.pdfUrl || tenant.PDF_URL || tenant.pdfLink 
-                            || tenant['PDF Link'] || tenant['PDF URL'] || tenant.pdfurl || '';
-              
+              tenant.pdfUrl = tenant.pdfUrl || '';
               if (!tenant.status) tenant.status = 'Pending';
               if (!tenant.dateSent) tenant.dateSent = '';
               if (!tenant.reason) tenant.reason = '—';
               
-              if (tenant.computed20th) {
+              // RECALCULATE DATES DYNAMICALLY ON LOAD
+              if (tenant.startDate && tenant.termLabel) {
+                const dates = parseDate(tenant.startDate, tenant.termLabel);
+                tenant.computed20th = dates.computed20th;
+                tenant.sixthDay = dates.sixthDay;
+                tenant.folderMonth = dates.folderMonth;
+              } else if (tenant.computed20th) {
                 const d = new Date(tenant.computed20th);
                 if (!isNaN(d.getTime())) {
                   tenant.computed20th = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -485,26 +427,20 @@
             renderTabs();
             renderSpreadsheet();
           } else {
-            document.getElementById('spreadsheetBody').innerHTML = `
-              <tr>
-                <td colspan="7" class="px-4 py-12 text-center text-slate-400">
-                  No tabs found in the database. Import a sheet to begin.
-                </td>
-              </tr>`;
+            document.getElementById('spreadsheetBody').innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-slate-400">No tabs found. Import a sheet to begin.</td></tr>`;
           }
         } else {
           alert("Failed to load database: " + res.error);
         }
       } catch (error) {
-        console.error("Database Load Error:", error);
-        alert("Could not connect to the Google Apps Script. Check your URL and deployment settings.");
+        console.error(error);
+        alert("Could not connect to the Google Apps Script.");
       } finally {
         document.getElementById('loadingOverlay').classList.add('hidden');
         document.getElementById('loadingOverlay').classList.remove('flex');
       }
     }
 
-    // --- DATABASE WRITE FUNCTIONS ---
     async function syncToDatabase(tenant, tabName, actionType) {
       try {
         const res = await fetch(APPS_SCRIPT_URL, {
@@ -521,19 +457,26 @@
             pdfUrl: tenant.pdfUrl || '',
             termLabel: tenant.termLabel,
             reason: tenant.reason,
-            dateSent: tenant.dateSent || ''
+            dateSent: tenant.dateSent || '',
+            startDate: tenant.startDate || ''
           })
         });
         return await res.json();
       } catch (e) {
-        console.error("Failed to sync with database:", e);
+        console.error(e);
         return { success: false };
       }
     }
 
-    // --- HELPER FUNCTIONS ---
     function formatPeso(amount) {
       return '₱' + (Number(amount) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatDate(dateObj) {
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(dateObj.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
     }
 
     function parseDate(startContract, term) {
@@ -556,23 +499,52 @@
 
       if (!isNaN(startD.getTime())) {
         const termString = String(term).toUpperCase().trim();
+        
         const isMonthly = 
-          termString === 'M-M' || termString === 'MM' || termString.includes('MONTHLY') || 
-          termString === 'TRIAL MONTH' || termString === 'EXT. TRIAL' || 
-          termString === 'MONTH-MONTH' || termString === 'EXT. TRIAL +';
+          termString === 'M-M' || 
+          termString === 'MM' || 
+          termString.includes('MONTHLY') || 
+          termString === 'TRIAL MONTH' || 
+          termString === 'EXT. TRIAL' || 
+          termString === 'EXT. TRIAL +' ||
+          termString === 'MONTH-MONTH';
 
         if (isMonthly) {
-          startD.setMonth(startD.getMonth() + 1);
-          startD.setDate(10); 
           termLabel = 'Monthly';
           termMonths = 1;
         } else {
           termMonths = Number(term) || 12;
-          startD.setDate(20); 
           termLabel = termMonths === 6 ? '6 months' : termMonths === 12 ? '1 year (12 months)' : termMonths === 24 ? '2 years (24 months)' : termMonths + ' months';
         }
         
-        computed20th = startD.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        // 1. Calculate the actual contract end date
+        let actualEndD = new Date(startD);
+        actualEndD.setMonth(actualEndD.getMonth() + termMonths);
+
+        // 2. Count 20 days from start date (or 10 days for short term)
+        let noticeDate = new Date(startD);
+        if (isMonthly) {
+          noticeDate.setDate(noticeDate.getDate() + 10);
+        } else {
+          noticeDate.setDate(noticeDate.getDate() + 20);
+        }
+
+        // 3. Monthly Recurrence: roll forward by 1 month until it hits the current or future cycle
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        while (noticeDate.getTime() < today.getTime() && noticeDate.getTime() < actualEndD.getTime()) {
+          noticeDate.setMonth(noticeDate.getMonth() + 1);
+        }
+
+        // 4. If the date rolled past the contract end, revert to actual end date
+        if (noticeDate.getTime() > actualEndD.getTime()) {
+          noticeDate = new Date(actualEndD);
+        }
+
+        startD = noticeDate;
+        
+        computed20th = formatDate(startD);
         folderMonth = startD.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
         let penaltyD = new Date(startD);
@@ -587,7 +559,6 @@
       return { computed20th, sixthDay, termMonths, termLabel, folderMonth };
     }
 
-    // --- UI RENDERING ---
     function renderTabs() {
       const tabsContainer = document.getElementById('tabsContainer');
       tabsContainer.innerHTML = '';
@@ -601,12 +572,7 @@
       tabNames.forEach(tabName => {
         const isActive = tabName === activeTab;
         const tabBtn = document.createElement('button');
-        
-        tabBtn.className = `px-4 py-2 rounded-t-lg font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${
-          isActive 
-          ? 'bg-white border-blue-600 text-blue-700 shadow-sm' 
-          : 'bg-slate-200 border-transparent text-slate-600 hover:bg-slate-300'
-        }`;
+        tabBtn.className = `px-4 py-2 rounded-t-lg font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${isActive ? 'bg-white border-blue-600 text-blue-700 shadow-sm' : 'bg-slate-200 border-transparent text-slate-600 hover:bg-slate-300'}`;
         tabBtn.textContent = tabName;
         
         tabBtn.addEventListener('click', () => {
@@ -658,22 +624,14 @@
       let pending = 0, generated = 0, sent = 0;
 
       if (!activeTab || !appData[activeTab] || appData[activeTab].length === 0) {
-        spreadsheetBody.innerHTML = `
-          <tr>
-            <td colspan="7" class="px-4 py-12 text-center text-slate-400">
-              <svg class="w-12 h-12 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-              No data in this tab.
-            </td>
-          </tr>`;
+        spreadsheetBody.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-slate-400">No data in this tab.</td></tr>`;
         document.getElementById('countPending').textContent = `0 Pending`;
         document.getElementById('countGenerated').textContent = `0 Generated`;
         document.getElementById('countSent').textContent = `0 Sent`;
         return;
       }
 
-      if (document.getElementById('monthFilter').value === 'ALL') {
-         populateMonthFilter();
-      }
+      if (document.getElementById('monthFilter').value === 'ALL') populateMonthFilter();
 
       const tenants = appData[activeTab];
       const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -694,11 +652,7 @@
         if (monthValue !== 'ALL') {
           try {
             const d = new Date(t.computed20th);
-            if (!isNaN(d)) {
-              matchesMonth = (d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) === monthValue);
-            } else {
-              matchesMonth = false;
-            }
+            matchesMonth = !isNaN(d) && (d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) === monthValue);
           } catch(e) { matchesMonth = false; }
         }
 
@@ -706,13 +660,7 @@
       });
 
       if (filteredTenants.length === 0) {
-        spreadsheetBody.innerHTML = `
-          <tr>
-            <td colspan="7" class="px-4 py-12 text-center text-slate-400">
-              <svg class="w-12 h-12 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-              No tenants found matching your search/filter.
-            </td>
-          </tr>`;
+        spreadsheetBody.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-slate-400">No tenants found matching your search.</td></tr>`;
       } else {
         filteredTenants.forEach((tenant) => {
           let badgeClass = 'bg-yellow-100 text-yellow-800';
@@ -720,21 +668,16 @@
           if (tenant.status === 'Sent') badgeClass = 'bg-green-100 text-green-800';
 
           const hasPdf = tenant.pdfUrl && String(tenant.pdfUrl).trim() !== '';
-          let pdfCell = hasPdf
-            ? `<a href="${tenant.pdfUrl}" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-bold text-xs flex justify-center items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> View PDF</a>` 
-            : `<span class="text-slate-300 text-xs">—</span>`;
+          let pdfCell = hasPdf ? `<a href="${tenant.pdfUrl}" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-bold text-xs flex justify-center items-center gap-1">View PDF</a>` : `<span class="text-slate-300 text-xs">—</span>`;
 
-          // Date Sent Input (Calendar Popup)
-          // Added conditional disabled attribute if status is not 'Sent'
           const isDisabled = tenant.status !== 'Sent';
           const disabledAttr = isDisabled ? 'disabled' : '';
           
           let dateSentHtml = '';
           if (tenant.dateSent && tenant.dateSent !== '') {
             try {
-              const d = new Date(tenant.dateSent);
-              const yyyymmdd = !isNaN(d) ? d.toISOString().split('T')[0] : tenant.dateSent;
-              dateSentHtml = `<input type="date" class="table-date-input" value="${yyyymmdd}" ${disabledAttr} onchange="updateDateSent('${tenant.tenantName.replace(/'/g, "\\'")}', this.value)">`;
+              const cleanDateStr = tenant.dateSent.split('T')[0];
+              dateSentHtml = `<input type="date" class="table-date-input" value="${cleanDateStr}" ${disabledAttr} onchange="updateDateSent('${tenant.tenantName.replace(/'/g, "\\'")}', this.value)">`;
             } catch(e) {
               dateSentHtml = `<input type="date" class="table-date-input" ${disabledAttr} onchange="updateDateSent('${tenant.tenantName.replace(/'/g, "\\'")}', this.value)">`;
             }
@@ -746,55 +689,34 @@
 
           let actionBtn = '';
           if (tenant.status === 'Pending') {
-            actionBtn = `
-              <button onclick="generateSingle('${safeName}')" class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-900 transition-colors inline-flex items-center gap-1">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                Generate
-              </button>`;
+            actionBtn = `<button onclick="generateSingle('${safeName}')" class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-900 transition-colors">Generate</button>`;
           } else if (tenant.status === 'Generated') {
             actionBtn = `
               <div class="flex justify-end items-center gap-1">
-                <button onclick="regenerateSingle('${safeName}')" class="bg-slate-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 transition-colors inline-flex items-center gap-1" title="Re-generate and overwrite Drive file">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                  Regenerate
-                </button>
-                <button onclick="markAsSent('${safeName}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition-colors inline-flex items-center gap-1">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                  Mark as Sent
-                </button>
-              </div>
-            `;
+                <button onclick="regenerateSingle('${safeName}')" class="bg-slate-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 transition-colors" title="Re-generate">Regenerate</button>
+                <button onclick="markAsSent('${safeName}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition-colors">Mark as Sent</button>
+              </div>`;
           } else {
-            actionBtn = `
-              <div class="flex justify-end items-center gap-1">
-                <span class="text-xs text-slate-400 font-medium inline-flex items-center gap-1">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                  Completed
-                </span>
-              </div>
-            `;
+            actionBtn = `<span class="text-xs text-slate-400 font-medium">Completed</span>`;
           }
 
           const tr = document.createElement('tr');
           tr.className = "hover:bg-slate-50 transition-colors";
+          
+          let displayDate = tenant.computed20th;
+          if (displayDate && displayDate.includes('-')) {
+             const d = new Date(displayDate);
+             if (!isNaN(d)) displayDate = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+          }
+
           tr.innerHTML = `
             <td class="px-4 py-3 font-medium text-slate-800">${tenant.tenantName}</td>
             <td class="px-4 py-3 text-slate-600">${tenant.unit}</td>
-            <td class="px-4 py-3 text-slate-600 font-medium">${tenant.computed20th}</td>
-            <td class="px-4 py-3">
-              <span class="px-2 py-1 text-[10px] uppercase tracking-wide rounded-full font-bold ${badgeClass}">
-                ${tenant.status}
-              </span>
-            </td>
-            <td class="px-4 py-3 text-center">
-              ${pdfCell}
-            </td>
-            <td class="px-4 py-3 text-right">
-              ${actionBtn}
-            </td>
-            <td class="px-4 py-3 text-center">
-              ${dateSentHtml}
-            </td>
+            <td class="px-4 py-3 text-slate-600 font-medium">${displayDate}</td>
+            <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] uppercase tracking-wide rounded-full font-bold ${badgeClass}">${tenant.status}</span></td>
+            <td class="px-4 py-3 text-center">${pdfCell}</td>
+            <td class="px-4 py-3 text-right">${actionBtn}</td>
+            <td class="px-4 py-3 text-center">${dateSentHtml}</td>
           `;
           spreadsheetBody.appendChild(tr);
         });
@@ -805,45 +727,35 @@
       document.getElementById('countSent').textContent = `${sent} Sent`;
     }
 
-    // Add Event Listeners for Search & Filter
     document.getElementById('searchInput').addEventListener('input', renderSpreadsheet);
     document.getElementById('statusFilter').addEventListener('change', renderSpreadsheet);
     document.getElementById('monthFilter').addEventListener('change', renderSpreadsheet);
 
-    // --- SAVE DATE SENT ---
     window.updateDateSent = async function(tenantName, newDateStr) {
       const tenantIndex = appData[activeTab].findIndex(t => t.tenantName === tenantName);
       if (tenantIndex === -1) return;
       const tenant = appData[activeTab][tenantIndex];
 
-      // Format the selected YYYY-MM-DD to a readable date (optional)
-      let displayDate = newDateStr;
-      if (newDateStr) {
-        const d = new Date(newDateStr);
-        if (!isNaN(d)) {
-          // Keep it as YYYY-MM-DD for input type="date" compatibility
-          tenant.dateSent = d.toISOString().split('T')[0]; 
-        } else {
-          tenant.dateSent = newDateStr;
-        }
-      } else {
-        tenant.dateSent = '';
-      }
-
-      // Sync to database
+      tenant.dateSent = newDateStr;
       await syncToDatabase(tenant, activeTab, 'update');
     };
 
-    // --- PDF GENERATION LOGIC ---
     async function generatePDFDoc(tenant) {
       try {
         document.getElementById('outDate').textContent = tenant.date || '';
         document.getElementById('outTenant').textContent = tenant.tenantName || '';
         document.getElementById('outBuilding').textContent = tenant.building || '';
         document.getElementById('outUnit').textContent = tenant.unit || '';
-        document.getElementById('outDay20').textContent = tenant.computed20th || '';
-        document.getElementById('outDay20b').textContent = tenant.computed20th || '';
-        document.getElementById('outDay20c').textContent = tenant.computed20th || '';
+        
+        let pdfDateStr = tenant.computed20th;
+        if (pdfDateStr && pdfDateStr.includes('-')) {
+           const d = new Date(pdfDateStr);
+           if (!isNaN(d)) pdfDateStr = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        document.getElementById('outDay20').textContent = pdfDateStr || '';
+        document.getElementById('outDay20b').textContent = pdfDateStr || '';
+        document.getElementById('outDay20c').textContent = pdfDateStr || '';
         document.getElementById('outSixthDay').textContent = tenant.sixthDay || '';
         document.getElementById('outCheckYes').textContent = (tenant.choice && tenant.choice.toUpperCase() === 'YES') ? '[ X ]' : '[   ]';
         document.getElementById('outCheckNo').textContent = (tenant.choice && tenant.choice.toUpperCase() === 'NO') ? '[ X ]' : '[   ]';
@@ -859,12 +771,12 @@
         document.getElementById('outTotalContract').textContent = formatPeso((Number(tenant.rent) || 0) * (tenant.termMonths || 12));
         document.getElementById('outSignature2').textContent = tenant.tenantName || '';
       } catch (err) {
-        throw new Error("Failed to populate template data: " + err.message);
+        throw new Error("Failed to populate template: " + err.message);
       }
 
       try {
         if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
-           throw new Error("Required libraries (html2canvas or jsPDF) are not loaded.");
+           throw new Error("Required libraries not loaded.");
         }
 
         const { jsPDF } = window.jspdf;
@@ -885,7 +797,6 @@
       }
     }
 
-    // --- ACTIONS ---
     window.generateSingle = async function(tenantName) {
       const tenantIndex = appData[activeTab].findIndex(t => t.tenantName === tenantName);
       if (tenantIndex === -1) return;
@@ -898,12 +809,10 @@
       try {
         const doc = await generatePDFDoc(tenant);
         const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
-        
         doc.save(fileName);
 
         if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
           document.getElementById('loadingText').textContent = `Uploading to Drive...`;
-          
           const monthName = tenant.folderMonth || "Unknown Month";
           const propertyName = tenant.building || "Unknown Property";
           const base64Data = doc.output('datauristring').split(',')[1];
@@ -911,29 +820,20 @@
           const uploadRes = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
-              fileName: fileName,
-              base64: base64Data,
-              rootFolderId: ROOT_FOLDER_ID,
-              propertyName: propertyName,
-              monthName: monthName,
-              tenantName: tenant.tenantName
+              fileName: fileName, base64: base64Data, rootFolderId: ROOT_FOLDER_ID,
+              propertyName: propertyName, monthName: monthName, tenantName: tenant.tenantName
             })
           });
 
           const uploadData = await uploadRes.json();
-          console.log('Upload response:', uploadData); 
           if (uploadData.success && uploadData.fileUrl) {
-            tenant.pdfUrl = uploadData.fileUrl; // Save the URL
-          } else {
-            console.warn('PDF upload failed or no fileUrl returned:', uploadData);
+            tenant.pdfUrl = uploadData.fileUrl;
           }
         }
 
         tenant.status = 'Generated';
         renderSpreadsheet(); 
-        
         await syncToDatabase(tenant, activeTab, 'update');
-
       } catch (error) {
         console.error(error);
         alert("Error generating PDF: " + error.message);
@@ -943,7 +843,6 @@
       }
     };
 
-    // REGENERATE ACTION
     window.regenerateSingle = async function(tenantName) {
       const tenantIndex = appData[activeTab].findIndex(t => t.tenantName === tenantName);
       if (tenantIndex === -1) return;
@@ -956,12 +855,10 @@
       try {
         const doc = await generatePDFDoc(tenant);
         const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
-        
         doc.save(fileName);
 
         if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
           document.getElementById('loadingText').textContent = `Re-uploading to Drive...`;
-          
           const monthName = tenant.folderMonth || "Unknown Month";
           const propertyName = tenant.building || "Unknown Property";
           const base64Data = doc.output('datauristring').split(',')[1];
@@ -969,26 +866,19 @@
           const uploadRes = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
-              fileName: fileName,
-              base64: base64Data,
-              rootFolderId: ROOT_FOLDER_ID,
-              propertyName: propertyName,
-              monthName: monthName,
-              tenantName: tenant.tenantName
+              fileName: fileName, base64: base64Data, rootFolderId: ROOT_FOLDER_ID,
+              propertyName: propertyName, monthName: monthName, tenantName: tenant.tenantName
             })
           });
 
           const uploadData = await uploadRes.json();
-          console.log('Regenerate upload response:', uploadData); 
           if (uploadData.success && uploadData.fileUrl) {
-            tenant.pdfUrl = uploadData.fileUrl; // Update the URL
-          } else {
-            console.warn('Regenerate upload failed or no fileUrl returned:', uploadData);
+            tenant.pdfUrl = uploadData.fileUrl;
           }
         }
         
         renderSpreadsheet();
-        await syncToDatabase(tenant, activeTab, 'update'); // Sync the new URL
+        await syncToDatabase(tenant, activeTab, 'update');
       } catch (error) {
         console.error(error);
         alert("Error regenerating PDF: " + error.message);
@@ -1002,26 +892,52 @@
       const tenantIndex = appData[activeTab].findIndex(t => t.tenantName === tenantName);
       if (tenantIndex === -1) return;
       const tenant = appData[activeTab][tenantIndex];
-      
       tenant.status = 'Sent';
       renderSpreadsheet();
-
       await syncToDatabase(tenant, activeTab, 'update');
     };
 
-    // --- MANUAL ADD ---
+    document.getElementById('clearCurrentTabBtn').addEventListener('click', async () => {
+      if (!activeTab) return alert("No active tab selected.");
+      
+      const confirmClear = confirm(`Are you sure you want to clear ALL data in the "${activeTab}" tab? This will wipe Google Sheets data.`);
+      
+      if (confirmClear) {
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+        document.getElementById('loadingOverlay').classList.add('flex');
+        document.getElementById('loadingText').textContent = `Clearing tab ${activeTab}...`;
+
+        try {
+          const res = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'clearTab', tabName: activeTab })
+          });
+          
+          const resData = await res.json();
+          
+          if (resData.success) {
+            appData[activeTab] = [];
+            renderSpreadsheet();
+            alert(`Tab "${activeTab}" cleared.`);
+          } else {
+            alert("Failed to clear: " + (resData.error || "Unknown"));
+          }
+        } catch (e) {
+          alert("Error clearing tab.");
+        } finally {
+          document.getElementById('loadingOverlay').classList.add('hidden');
+          document.getElementById('loadingOverlay').classList.remove('flex');
+        }
+      }
+    });
+
     document.getElementById('addTenantFormBtn').addEventListener('click', async () => {
       const tenantName = document.getElementById('inputTenant').value;
       if (!tenantName) return alert("Enter Tenant Name");
-
-      if (!activeTab) {
-        alert("Please select or import a tab first.");
-        return;
-      }
+      if (!activeTab) return alert("Select a tab first.");
 
       const startContract = document.getElementById('inputStartDate').value;
       const term = document.getElementById('inputTerm').value;
-      
       const dates = parseDate(startContract, term);
 
       const newTenant = {
@@ -1034,7 +950,8 @@
         status: 'Pending',
         pdfUrl: '',
         reason: '—',
-        dateSent: ''
+        dateSent: '',
+        startDate: startContract 
       };
 
       appData[activeTab].push(newTenant);
@@ -1044,11 +961,44 @@
       await syncToDatabase(newTenant, activeTab, 'save');
     });
 
-    // --- EXCEL IMPORT ---
+    document.getElementById('recalculateDatesBtn').addEventListener('click', async () => {
+      if (!activeTab) return alert("No active tab selected.");
+      
+      const confirmRecalc = confirm(`Are you sure you want to recalculate ALL dates in the "${activeTab}" tab based on the new formula? This will update Google Sheets.`);
+      if (!confirmRecalc) return;
+
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      document.getElementById('loadingOverlay').classList.add('flex');
+      document.getElementById('loadingText').textContent = `Recalculating dates...`;
+
+      try {
+        const tenants = appData[activeTab];
+        for (let i = 0; i < tenants.length; i++) {
+          const tenant = tenants[i];
+          if (tenant.startDate && tenant.termLabel) {
+            const dates = parseDate(tenant.startDate, tenant.termLabel);
+            tenant.computed20th = dates.computed20th;
+            tenant.sixthDay = dates.sixthDay;
+            tenant.folderMonth = dates.folderMonth;
+            
+            await syncToDatabase(tenant, activeTab, 'update');
+          }
+        }
+        
+        renderSpreadsheet();
+        alert("Dates recalculated successfully!");
+      } catch (error) {
+        console.error(error);
+        alert("Error recalculating dates.");
+      } finally {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('loadingOverlay').classList.remove('flex');
+      }
+    });
+
     document.getElementById('excelInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
       document.getElementById('loadingOverlay').classList.remove('hidden');
       document.getElementById('loadingOverlay').classList.add('flex');
       document.getElementById('loadingText').textContent = "Reading Excel File...";
@@ -1067,11 +1017,9 @@
             option.textContent = sheetName;
             sheetSelect.appendChild(option);
           });
-
           document.getElementById('sheetSelectionArea').classList.remove('hidden');
         } catch (error) {
-          console.error("Excel Parse Error:", error);
-          alert("Error reading the Excel file. It may be corrupted.");
+          alert("Error reading file.");
         } finally {
           document.getElementById('loadingOverlay').classList.add('hidden');
           document.getElementById('loadingOverlay').classList.remove('flex');
@@ -1084,25 +1032,20 @@
     document.getElementById('confirmLoadSheetBtn').addEventListener('click', async () => {
       if (!workbookCache) return;
       const selectedSheetName = document.getElementById('sheetSelect').value;
-
       document.getElementById('loadingOverlay').classList.remove('hidden');
       document.getElementById('loadingOverlay').classList.add('flex');
-      document.getElementById('loadingText').textContent = "Uploading to Database...";
-
+      
       try {
         const worksheet = workbookCache.Sheets[selectedSheetName];
         const json = XLSX.utils.sheet_to_json(worksheet, { raw: true });
+        if (json.length === 0) return alert("Sheet empty.");
+        if (!appData[selectedSheetName]) appData[selectedSheetName] = [];
 
-        if (json.length === 0) {
-          alert("The selected sheet is empty.");
-          return;
-        }
-
-        if (!appData[selectedSheetName]) {
-          appData[selectedSheetName] = [];
-        }
-
-        for (const row of json) {
+        for (let i = 0; i < json.length; i++) {
+          // SHOW UPLOAD PROGRESS HERE
+          document.getElementById('loadingText').textContent = `Uploading Data... (${i + 1}/${json.length})`;
+          
+          const row = json[i];
           const rowKeys = Object.keys(row).reduce((acc, key) => {
             acc[key.trim().toUpperCase()] = row[key];
             return acc;
@@ -1122,36 +1065,30 @@
             status: 'Pending',
             pdfUrl: '',
             reason: rowKeys['REASON'] || '—',
-            dateSent: ''
+            dateSent: '',
+            startDate: startContract
           };
 
           appData[selectedSheetName].push(newTenant);
-          
           await syncToDatabase(newTenant, selectedSheetName, 'save');
         }
 
         activeTab = selectedSheetName;
         document.getElementById('searchInput').value = ''; 
         document.getElementById('statusFilter').value = 'ALL'; 
-
         renderTabs(); 
         renderSpreadsheet();
-        
         document.getElementById('sheetSelectionArea').classList.add('hidden');
         workbookCache = null;
-
       } catch (error) {
-        console.error("Sheet Load Error:", error);
-        alert("Error loading the selected sheet.");
+        alert("Error loading sheet.");
       } finally {
         document.getElementById('loadingOverlay').classList.add('hidden');
         document.getElementById('loadingOverlay').classList.remove('flex');
       }
     });
 
-    // Load data on startup
     window.onload = initDatabase;
-
   </script>
 </body>
 </html>
