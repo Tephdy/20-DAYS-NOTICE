@@ -45,6 +45,27 @@
     .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #333; transition: background 0.2s; cursor: pointer; }
     .ribbon-btn:hover { background-color: #e2e8f0; }
     .ribbon-btn svg { width: 24px; height: 24px; margin-bottom: 2px; }
+    
+    /* Styling for the date input inside the table */
+    input[type="date"].table-date-input {
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: 12px;
+      color: #475569;
+      padding: 4px;
+      border-radius: 4px;
+      cursor: pointer;
+      outline: none;
+      width: 100%;
+    }
+    input[type="date"].table-date-input:hover {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+    input[type="date"].table-date-input:focus {
+      border-color: #3b82f6;
+      background: #fff;
+    }
   </style>
 </head>
 <body class="p-2 md:p-4 flex flex-col w-full h-screen">
@@ -240,9 +261,10 @@
             <tr>
               <th class="px-4 py-2 border-b">Tenant Name</th>
               <th class="px-4 py-2 border-b">Unit</th>
-              <th class="px-4 py-2 border-b">Computed 20-Day Date</th>
+              <th class="px-4 py-2 border-b">Computed Due Date</th>
               <th class="px-4 py-2 border-b">Status</th>
               <th class="px-4 py-2 border-b text-center">PDF</th>
+              <th class="px-4 py-2 border-b text-center">Date Sent</th>
               <th class="px-4 py-2 border-b text-right">Actions</th>
             </tr>
           </thead>
@@ -389,7 +411,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxv120NCKuPzCPT7p4vCvVi9gDZkSPD9roJjxsEQG60D0JAZHzywcs7CvcEi7Pm_F-f/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbrnrRkck2nESH07Jgqjj9QiWKk5GQQUbAWbK2SMvlDu57QzCfI5E7rVHoNTNtYtsX/exec';
     const ROOT_FOLDER_ID = '16qLfbrPeU-H_UH0QUl2lIqUoqf5_nVLQ'; 
 
     let appData = {};
@@ -446,7 +468,7 @@
           } else {
             document.getElementById('spreadsheetBody').innerHTML = `
               <tr>
-                <td colspan="6" class="px-4 py-12 text-center text-slate-400">
+                <td colspan="7" class="px-4 py-12 text-center text-slate-400">
                   No tabs found in the database. Import a sheet to begin.
                 </td>
               </tr>`;
@@ -477,9 +499,10 @@
             computed20th: tenant.computed20th,
             rent: tenant.rent,
             status: tenant.status,
-            pdfUrl: tenant.pdfUrl || '', // Send PDF Link
+            pdfUrl: tenant.pdfUrl || '',
             termLabel: tenant.termLabel,
-            reason: tenant.reason
+            reason: tenant.reason,
+            dateSent: tenant.dateSent || ''
           })
         });
         return await res.json();
@@ -618,7 +641,7 @@
       if (!activeTab || !appData[activeTab] || appData[activeTab].length === 0) {
         spreadsheetBody.innerHTML = `
           <tr>
-            <td colspan="6" class="px-4 py-12 text-center text-slate-400">
+            <td colspan="7" class="px-4 py-12 text-center text-slate-400">
               <svg class="w-12 h-12 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
               No data in this tab.
             </td>
@@ -666,7 +689,7 @@
       if (filteredTenants.length === 0) {
         spreadsheetBody.innerHTML = `
           <tr>
-            <td colspan="6" class="px-4 py-12 text-center text-slate-400">
+            <td colspan="7" class="px-4 py-12 text-center text-slate-400">
               <svg class="w-12 h-12 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
               No tenants found matching your search/filter.
             </td>
@@ -681,6 +704,21 @@
           let pdfCell = tenant.pdfUrl 
             ? `<a href="${tenant.pdfUrl}" target="_blank" class="text-blue-600 hover:underline font-bold text-xs">View PDF</a>` 
             : `<span class="text-slate-300 text-xs">—</span>`;
+
+          // Date Sent Input (Calendar Popup)
+          let dateSentHtml = '';
+          if (tenant.dateSent && tenant.dateSent !== '') {
+            // Try to format the stored date to YYYY-MM-DD for the input
+            try {
+              const d = new Date(tenant.dateSent);
+              const yyyymmdd = !isNaN(d) ? d.toISOString().split('T')[0] : tenant.dateSent;
+              dateSentHtml = `<input type="date" class="table-date-input" value="${yyyymmdd}" onchange="updateDateSent('${tenant.tenantName}', this.value)">`;
+            } catch(e) {
+              dateSentHtml = `<input type="date" class="table-date-input" onchange="updateDateSent('${tenant.tenantName}', this.value)">`;
+            }
+          } else {
+            dateSentHtml = `<input type="date" class="table-date-input" onchange="updateDateSent('${tenant.tenantName}', this.value)">`;
+          }
 
           let actionBtn = '';
           if (tenant.status === 'Pending') {
@@ -714,6 +752,9 @@
             <td class="px-4 py-3 text-center">
               ${pdfCell}
             </td>
+            <td class="px-4 py-3 text-center">
+              ${dateSentHtml}
+            </td>
             <td class="px-4 py-3 text-right">
               ${actionBtn}
             </td>
@@ -731,6 +772,33 @@
     document.getElementById('searchInput').addEventListener('input', renderSpreadsheet);
     document.getElementById('statusFilter').addEventListener('change', renderSpreadsheet);
     document.getElementById('monthFilter').addEventListener('change', renderSpreadsheet);
+
+    // --- SAVE DATE SENT ---
+    window.updateDateSent = async function(tenantName, newDateStr) {
+      const tenantIndex = appData[activeTab].findIndex(t => t.tenantName === tenantName);
+      if (tenantIndex === -1) return;
+      const tenant = appData[activeTab][tenantIndex];
+
+      // Format the selected YYYY-MM-DD to a readable date (optional)
+      let displayDate = newDateStr;
+      if (newDateStr) {
+        const d = new Date(newDateStr);
+        if (!isNaN(d)) {
+          // Keep it as YYYY-MM-DD for input type="date" compatibility
+          tenant.dateSent = d.toISOString().split('T')[0]; 
+        } else {
+          tenant.dateSent = newDateStr;
+        }
+      } else {
+        tenant.dateSent = '';
+      }
+
+      // Sync to database
+      await syncToDatabase(tenant, activeTab, 'update');
+      
+      // Optional: Re-render to reflect updated status if needed
+      // renderSpreadsheet(); 
+    };
 
     // --- PDF GENERATION LOGIC ---
     async function generatePDFDoc(tenant) {
@@ -921,11 +989,12 @@
         building: document.getElementById('inputBuilding').value,
         unit: document.getElementById('inputUnit').value,
         rent: document.getElementById('inputRent').value,
-        computed20th: dates.computed20th, // This is now formatted as "Month DD, YYYY"
+        computed20th: dates.computed20th,
         termLabel: dates.termLabel,
         status: 'Pending',
         pdfUrl: '',
-        reason: '—'
+        reason: '—',
+        dateSent: ''
       };
 
       appData[activeTab].push(newTenant);
@@ -1011,8 +1080,9 @@
             computed20th: dates.computed20th,
             termLabel: dates.termLabel,
             status: 'Pending',
-            pdfUrl: '', // Empty on import
-            reason: rowKeys['REASON'] || '—'
+            pdfUrl: '',
+            reason: rowKeys['REASON'] || '—',
+            dateSent: ''
           };
 
           appData[selectedSheetName].push(newTenant);
