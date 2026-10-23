@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lease Renewal Management System</title>
-  <link rel="icon" type="image/png" href="img/logo.ico">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -112,7 +111,7 @@
       <div class="ribbon-content hidden flex gap-4 w-full" id="ribbon-insert">
         <div class="flex flex-col items-center border-r border-slate-200 pr-4">
           <div class="flex gap-2">
-            <button id="manualAddBtn" class="ribbon-btn">
+            <button class="ribbon-btn">
               <svg class="text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
               Add Tenant
             </button>
@@ -194,7 +193,7 @@
       </div>
       
       <div class="shrink-0 mt-2 pt-2 border-t">
-        <button id="manualAddBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-sm shadow-sm">Add to Current Tab</button>
+        <button id="addTenantFormBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-sm shadow-sm">Add to Current Tab</button>
       </div>
     </div>
 
@@ -894,7 +893,7 @@
     };
 
     // --- MANUAL ADD ---
-    document.getElementById('manualAddBtn').addEventListener('click', async () => {
+    document.getElementById('addTenantFormBtn').addEventListener('click', async () => {
       const tenantName = document.getElementById('inputTenant').value;
       if (!tenantName) return alert("Enter Tenant Name");
 
@@ -905,6 +904,7 @@
 
       const startContract = document.getElementById('inputStartDate').value;
       const term = document.getElementById('inputTerm').value;
+      
       const dates = parseDate(startContract, term);
 
       const newTenant = {
@@ -912,7 +912,7 @@
         building: document.getElementById('inputBuilding').value,
         unit: document.getElementById('inputUnit').value,
         rent: document.getElementById('inputRent').value,
-        computed20th: dates.computed20th,
+        computed20th: dates.computed20th, // This is now formatted as "Month DD, YYYY"
         termLabel: dates.termLabel,
         status: 'Pending',
         pdfUrl: '',
