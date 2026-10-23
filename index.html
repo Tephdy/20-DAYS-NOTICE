@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lease Renewal Management System</title>
-  <link rel="icon" href="img/logo.ico" type="image/x-icon">  
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -14,21 +13,7 @@
 
   <style>
     body { background-color: #f1f5f9; height: 100vh; overflow: hidden; }
-    
-    .pdf-page {
-      width: 210mm;
-      height: 297mm;
-      background: #ffffff;
-      margin: 0 auto;
-      padding: 20mm 20mm; 
-      box-sizing: border-box;
-      font-family: 'Times New Roman', Times, serif;
-      font-size: 15px;
-      line-height: 1.35;
-      color: #000000;
-      overflow: hidden;
-    }
-
+    .pdf-page { width: 210mm; height: 297mm; background: #ffffff; margin: 0 auto; padding: 20mm 20mm; box-sizing: border-box; font-family: 'Times New Roman', Times, serif; font-size: 15px; line-height: 1.35; color: #000000; overflow: hidden; }
     #page-1 { line-height: 1.1; }
     #page-1 > div:first-child { margin-bottom: 12px; }
     #page-1 > div:nth-child(2) { margin-bottom: 12px; }
@@ -40,103 +25,25 @@
     #page-1 > div:nth-child(10) { margin-top: 6px; }
     #page-1 > div:nth-child(11) { margin-top: 8px; }
     #page-1 > div:nth-child(12) { margin-top: 24px; }
-
-    .pdf-page p, .pdf-page div, .pdf-page span {
-      text-align: left !important;
-      letter-spacing: normal !important;
-      word-spacing: normal !important;
-    }
-
-    .list-item {
-      list-style: none;
-      margin-bottom: 4px;
-      padding-left: 1.5em;
-      text-indent: -1.5em;
-    }
-    .list-item .num {
-      font-weight: bold;
-      display: inline-block;
-      width: 1.5em;
-      text-indent: 0;
-    }
-
-    .form-table {
-      width: 100%;
-      max-width: 450px;
-      margin: 15px 0 25px 0;
-      border-collapse: collapse;
-    }
-    .form-table td {
-      padding: 6px 10px;
-      vertical-align: bottom;
-    }
-    .line-cell {
-      border-bottom: 1.5px solid black;
-      width: 180px;
-    }
-
-    .spinner {
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top: 4px solid #ffffff;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Custom Scrollbar for Tabs */
+    .pdf-page p, .pdf-page div, .pdf-page span { text-align: left !important; letter-spacing: normal !important; word-spacing: normal !important; }
+    .list-item { list-style: none; margin-bottom: 4px; padding-left: 1.5em; text-indent: -1.5em; }
+    .list-item .num { font-weight: bold; display: inline-block; width: 1.5em; text-indent: 0; }
+    .form-table { width: 100%; max-width: 450px; margin: 15px 0 25px 0; border-collapse: collapse; }
+    .form-table td { padding: 6px 10px; vertical-align: bottom; }
+    .line-cell { border-bottom: 1.5px solid black; width: 180px; }
+    .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid #ffffff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .tab-scroll::-webkit-scrollbar { height: 6px; }
     .tab-scroll::-webkit-scrollbar-track { background: transparent; }
     .tab-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .tab-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    
-    /* Dragging Styles */
-    .dragging {
-      opacity: 0.5;
-      cursor: grabbing !important;
-    }
-
-    /* Microsoft Office Ribbon Styles */
-    .office-tab {
-      padding: 8px 16px;
-      font-size: 14px;
-      color: #333;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s;
-    }
-    .office-tab:hover {
-      background-color: #e2e8f0;
-    }
-    .office-tab.active {
-      color: #217346; /* Excel Green */
-      border-bottom-color: #217346;
-      font-weight: 600;
-    }
-    .ribbon-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      color: #333;
-      transition: background 0.2s;
-      cursor: pointer;
-    }
-    .ribbon-btn:hover {
-      background-color: #e2e8f0;
-    }
-    .ribbon-btn svg {
-      width: 24px;
-      height: 24px;
-      margin-bottom: 2px;
-    }
+    .dragging { opacity: 0.5; cursor: grabbing !important; }
+    .office-tab { padding: 8px 16px; font-size: 14px; color: #333; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .office-tab:hover { background-color: #e2e8f0; }
+    .office-tab.active { color: #217346; border-bottom-color: #217346; font-weight: 600; }
+    .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #333; transition: background 0.2s; cursor: pointer; }
+    .ribbon-btn:hover { background-color: #e2e8f0; }
+    .ribbon-btn svg { width: 24px; height: 24px; margin-bottom: 2px; }
   </style>
 </head>
 <body class="p-2 md:p-4 flex flex-col w-full h-screen">
@@ -337,8 +244,9 @@
             <tr>
               <th class="px-4 py-2 border-b">Tenant Name</th>
               <th class="px-4 py-2 border-b">Unit</th>
-              <th class="px-4 py-2 border-b">Computed 20-Day Date</th>
+              <th class="px-4 py-2 border-b">Computed Due Date</th>
               <th class="px-4 py-2 border-b">Status</th>
+              <th class="px-4 py-2 border-b text-center">PDF</th>
               <th class="px-4 py-2 border-b text-right">Actions</th>
             </tr>
           </thead>
@@ -485,13 +393,12 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4FEZlNRDJnQ_yxMSAK-7M3HIgJCuX7nGJhg8YnCUNMoWBlOdzjYjv-bZ7Psc0IT6O/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxv120NCKuPzCPT7p4vCvVi9gDZkSPD9roJjxsEQG60D0JAZHzywcs7CvcEi7Pm_F-f/exec';
     const ROOT_FOLDER_ID = '16qLfbrPeU-H_UH0QUl2lIqUoqf5_nVLQ'; 
 
     let appData = {};
     let activeTab = null;
     let workbookCache = null;
-    let draggedTabName = null; 
 
     // --- OFFICE RIBBON LOGIC ---
     const tabs = document.querySelectorAll('.office-tab');
@@ -530,7 +437,7 @@
           } else {
             document.getElementById('spreadsheetBody').innerHTML = `
               <tr>
-                <td colspan="5" class="px-4 py-12 text-center text-slate-400">
+                <td colspan="6" class="px-4 py-12 text-center text-slate-400">
                   No tabs found in the database. Import a sheet to begin.
                 </td>
               </tr>`;
@@ -550,7 +457,7 @@
     // --- DATABASE WRITE FUNCTIONS ---
     async function syncToDatabase(tenant, tabName, actionType) {
       try {
-        await fetch(APPS_SCRIPT_URL, {
+        const res = await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify({
             action: actionType, 
@@ -561,12 +468,15 @@
             computed20th: tenant.computed20th,
             rent: tenant.rent,
             status: tenant.status,
+            pdfUrl: tenant.pdfUrl || '', // Send PDF Link
             termLabel: tenant.termLabel,
             reason: tenant.reason
           })
         });
+        return await res.json();
       } catch (e) {
         console.error("Failed to sync with database:", e);
+        return { success: false };
       }
     }
 
@@ -699,7 +609,7 @@
       if (!activeTab || !appData[activeTab] || appData[activeTab].length === 0) {
         spreadsheetBody.innerHTML = `
           <tr>
-            <td colspan="5" class="px-4 py-12 text-center text-slate-400">
+            <td colspan="6" class="px-4 py-12 text-center text-slate-400">
               <svg class="w-12 h-12 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
               No data in this tab.
             </td>
@@ -747,7 +657,7 @@
       if (filteredTenants.length === 0) {
         spreadsheetBody.innerHTML = `
           <tr>
-            <td colspan="5" class="px-4 py-12 text-center text-slate-400">
+            <td colspan="6" class="px-4 py-12 text-center text-slate-400">
               <svg class="w-12 h-12 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
               No tenants found matching your search/filter.
             </td>
@@ -758,18 +668,27 @@
           if (tenant.status === 'Generated') badgeClass = 'bg-blue-100 text-blue-800';
           if (tenant.status === 'Sent') badgeClass = 'bg-green-100 text-green-800';
 
+          // PDF Link Column Content
+          let pdfCell = tenant.pdfUrl 
+            ? `<a href="${tenant.pdfUrl}" target="_blank" class="text-blue-600 hover:underline font-bold text-xs">View PDF</a>` 
+            : `<span class="text-slate-300 text-xs">—</span>`;
+
           let actionBtn = '';
           if (tenant.status === 'Pending') {
             actionBtn = `<button onclick="generateSingle('${tenant.tenantName}')" class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-900 transition-colors">⚙️ Generate</button>`;
           } else if (tenant.status === 'Generated') {
             actionBtn = `
-              <div class="flex justify-end gap-1">
+              <div class="flex justify-end items-center gap-1">
                 <button onclick="regenerateSingle('${tenant.tenantName}')" class="bg-slate-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 transition-colors" title="Re-generate and overwrite Drive file">↻ Regenerate</button>
                 <button onclick="markAsSent('${tenant.tenantName}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition-colors">✅ Mark as Sent</button>
               </div>
             `;
           } else {
-            actionBtn = `<span class="text-xs text-slate-400 font-medium">Completed</span>`;
+            actionBtn = `
+              <div class="flex justify-end items-center gap-1">
+                <span class="text-xs text-slate-400 font-medium">Completed</span>
+              </div>
+            `;
           }
 
           const tr = document.createElement('tr');
@@ -782,6 +701,9 @@
               <span class="px-2 py-1 text-[10px] uppercase tracking-wide rounded-full font-bold ${badgeClass}">
                 ${tenant.status}
               </span>
+            </td>
+            <td class="px-4 py-3 text-center">
+              ${pdfCell}
             </td>
             <td class="px-4 py-3 text-right">
               ${actionBtn}
@@ -875,7 +797,7 @@
           const propertyName = tenant.building || "Unknown Property";
           const base64Data = doc.output('datauristring').split(',')[1];
           
-          await fetch(APPS_SCRIPT_URL, {
+          const uploadRes = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
               fileName: fileName,
@@ -886,6 +808,11 @@
               tenantName: tenant.tenantName
             })
           });
+
+          const uploadData = await uploadRes.json();
+          if (uploadData.success && uploadData.fileUrl) {
+            tenant.pdfUrl = uploadData.fileUrl; // Save the URL
+          }
         }
 
         tenant.status = 'Generated';
@@ -925,7 +852,7 @@
           const propertyName = tenant.building || "Unknown Property";
           const base64Data = doc.output('datauristring').split(',')[1];
           
-          await fetch(APPS_SCRIPT_URL, {
+          const uploadRes = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
               fileName: fileName,
@@ -936,9 +863,15 @@
               tenantName: tenant.tenantName
             })
           });
+
+          const uploadData = await uploadRes.json();
+          if (uploadData.success && uploadData.fileUrl) {
+            tenant.pdfUrl = uploadData.fileUrl; // Update the URL
+          }
         }
         
         renderSpreadsheet();
+        await syncToDatabase(tenant, activeTab, 'update'); // Sync the new URL
       } catch (error) {
         console.error(error);
         alert("Error regenerating PDF: " + error.message);
@@ -981,6 +914,7 @@
         computed20th: dates.computed20th,
         termLabel: dates.termLabel,
         status: 'Pending',
+        pdfUrl: '',
         reason: '—'
       };
 
@@ -1067,6 +1001,7 @@
             computed20th: dates.computed20th,
             termLabel: dates.termLabel,
             status: 'Pending',
+            pdfUrl: '', // Empty on import
             reason: rowKeys['REASON'] || '—'
           };
 
