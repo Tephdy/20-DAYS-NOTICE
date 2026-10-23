@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lease Renewal Management System</title>
-  <link rel="icon" href="img/logo.ico" type="image/x-icon">
+  <link rel="icon" href="img/logo.ico" type="image/x-icon">  
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -144,25 +144,18 @@
   <!-- LOADING OVERLAY -->
   <div id="loadingOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex-col items-center justify-center backdrop-blur-sm">
     <div class="spinner mb-4"></div>
-    <h2 id="loadingText" class="text-white text-xl font-bold">Processing...</h2>
-    <p class="text-slate-300 mt-2">Please wait.</p>
+    <h2 id="loadingText" class="text-white text-xl font-bold">Syncing Database...</h2>
+    <p class="text-slate-300 mt-2">Communicating with Google Sheets.</p>
   </div>
 
-  <!-- MICROSOFT OFFICE STYLE RIBBON HEADER -->
+  <!-- OFFICE RIBBON HEADER -->
   <div class="w-full bg-white shadow-sm border border-slate-300 rounded-t-lg mb-2 overflow-hidden shrink-0">
-    <!-- Title Bar -->
     <div class="bg-[#217346] text-white px-4 py-1 flex justify-between items-center text-sm">
       <div class="flex items-center gap-4">
         <span class="font-bold">Lease Renewal Management System</span>
-        <span class="opacity-75 text-xs">Monitoring.xlsx</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="opacity-75 text-xs">Saved to Browser</span>
-        <button class="bg-white text-[#217346] px-3 py-0.5 rounded text-xs font-bold">Share</button>
+        <span class="opacity-75 text-xs">Connected to Google Sheets</span>
       </div>
     </div>
-
-    <!-- Tabs -->
     <div class="flex border-b border-slate-200 bg-slate-50 px-2 pt-1" id="ribbonTabs">
       <div class="office-tab active" data-target="home">Home</div>
       <div class="office-tab" data-target="insert">Insert</div>
@@ -170,10 +163,7 @@
       <div class="office-tab" data-target="view">View</div>
     </div>
 
-    <!-- Ribbon Content Areas -->
     <div class="p-2 bg-white min-h-[80px] flex items-center border-b border-slate-300">
-      
-      <!-- HOME TAB -->
       <div class="ribbon-content flex gap-4 w-full" id="ribbon-home">
         <div class="flex flex-col items-center border-r border-slate-200 pr-4">
           <div class="flex gap-2">
@@ -211,7 +201,6 @@
         </div>
       </div>
 
-      <!-- INSERT TAB -->
       <div class="ribbon-content hidden flex gap-4 w-full" id="ribbon-insert">
         <div class="flex flex-col items-center border-r border-slate-200 pr-4">
           <div class="flex gap-2">
@@ -222,12 +211,8 @@
           </div>
           <span class="text-[10px] text-slate-400 mt-1">Manual Entry</span>
         </div>
-        <div class="flex flex-col justify-center text-xs text-slate-500 px-4">
-          Fill out the form on the left side to manually add a tenant to the current tab.
-        </div>
       </div>
 
-      <!-- DATA TAB -->
       <div class="ribbon-content hidden flex gap-4 w-full" id="ribbon-data">
         <div class="flex flex-col items-center border-r border-slate-200 pr-4">
           <div class="flex gap-2">
@@ -238,41 +223,32 @@
           </div>
           <span class="text-[10px] text-slate-400 mt-1">Data Management</span>
         </div>
-        <div class="flex flex-col justify-center text-xs text-slate-500 px-4">
-          Use the search and filter bar below the tabs to navigate your data.
-        </div>
       </div>
 
-      <!-- VIEW TAB -->
       <div class="ribbon-content hidden flex gap-4 w-full" id="ribbon-view">
         <div class="flex flex-col justify-center text-xs text-slate-500 px-4 w-full text-center">
-          Drag and drop the tabs (e.g., ECO, RESIDENTIAL) below the spreadsheet to reorder them.
+          Data is synced with Google Sheets. Drag and drop the tabs below to reorder them visually.
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- Sheet Selection (Hidden until import) -->
   <div id="sheetSelectionArea" class="hidden w-full mb-2 bg-yellow-50 border border-yellow-200 p-2 rounded-lg flex items-center gap-4 shrink-0">
     <label class="text-sm font-bold text-yellow-800">Select Sheet to Import:</label>
     <select id="sheetSelect" class="px-3 py-1 border border-yellow-300 rounded text-sm bg-white">
-      <!-- Options injected here -->
     </select>
     <button id="confirmLoadSheetBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-bold px-4 py-1 rounded">Load</button>
   </div>
 
-  <!-- MAIN CONTAINER (Full Height) -->
   <div class="w-full flex flex-col lg:flex-row gap-2 items-stretch flex-1 min-h-0">
     
-    <!-- LEFT SIDEBAR (Manual Form) - Made narrower (w-80) -->
+    <!-- LEFT SIDEBAR -->
     <div class="w-full lg:w-80 bg-white p-4 rounded-2xl shadow-xl border border-slate-200 flex flex-col h-full shrink-0">
       <h2 class="text-lg font-bold mb-2 text-slate-800 border-b pb-2 shrink-0 flex items-center gap-2">
         <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         Add Single Tenant
       </h2>
       
-      <!-- Scrollable Form Content -->
       <div class="overflow-y-auto flex-1 pr-1 space-y-3">
         <div>
           <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tenant Name</label>
@@ -314,20 +290,16 @@
       </div>
     </div>
 
-    <!-- RIGHT AREA: SPREADSHEET - Flex-1 takes remaining space -->
+    <!-- RIGHT AREA: SPREADSHEET -->
     <div class="w-full lg:flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col h-full flex-1 min-h-0">
       
-      <!-- Header & Tabs -->
       <div class="p-4 border-b border-slate-200 bg-slate-50 rounded-t-2xl flex flex-col gap-2 shrink-0">
-        
-        <!-- CENTERED STACKED LAYOUT -->
         <div class="flex flex-col items-center justify-center text-center gap-1">
           <div>
             <h3 class="text-lg font-bold text-slate-800">Monitoring Spreadsheet</h3>
-            <p class="text-xs text-slate-500">Data is saved automatically in your browser.</p>
+            <p class="text-xs text-slate-500">Data is synced directly to Google Sheets.</p>
           </div>
           
-          <!-- Status Badges (Horizontal) -->
           <div class="flex flex-row gap-2 mt-1">
             <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full" id="countPending">0 Pending</span>
             <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full" id="countGenerated">0 Generated</span>
@@ -335,12 +307,9 @@
           </div>
         </div>
 
-        <!-- Dynamic Tabs Container (Draggable) -->
         <div id="tabsContainer" class="flex items-center gap-2 overflow-x-auto tab-scroll pb-1 mt-2">
-          <!-- Tabs injected here -->
         </div>
 
-        <!-- SEARCH & FILTER BAR -->
         <div class="flex flex-col sm:flex-row gap-2 mt-1">
           <div class="flex-1 relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -362,7 +331,6 @@
         </div>
       </div>
       
-      <!-- Table (Flexible area to fill remaining height) -->
       <div class="overflow-auto flex-1 p-0 min-h-0">
         <table class="w-full text-left border-collapse">
           <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-bold sticky top-0 shadow-sm z-10">
@@ -375,7 +343,6 @@
             </tr>
           </thead>
           <tbody id="spreadsheetBody" class="divide-y divide-slate-100 text-sm">
-            <!-- Rows injected dynamically -->
           </tbody>
         </table>
       </div>
@@ -518,12 +485,13 @@
   </div>
 
   <script>
-    // ==========================================
-    // ⚠️ GOOGLE APPS SCRIPT SETUP
-    // ==========================================
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzJOMbtZE1aa3AOYPEkkH1FUXdPY_X0pzfHpVD8AlPcmOrFy9tnodF2c9bqDCC_OZI/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4FEZlNRDJnQ_yxMSAK-7M3HIgJCuX7nGJhg8YnCUNMoWBlOdzjYjv-bZ7Psc0IT6O/exec';
     const ROOT_FOLDER_ID = '16qLfbrPeU-H_UH0QUl2lIqUoqf5_nVLQ'; 
-    // ==========================================
+
+    let appData = {};
+    let activeTab = null;
+    let workbookCache = null;
+    let draggedTabName = null; 
 
     // --- OFFICE RIBBON LOGIC ---
     const tabs = document.querySelectorAll('.office-tab');
@@ -539,39 +507,75 @@
       });
     });
 
-    // SYSTEM STATE & STORAGE
-    let appData = {};
-    let activeTab = null;
-    let workbookCache = null;
-    let draggedTabName = null; 
+    // --- INITIALIZE DATABASE ---
+    async function initDatabase() {
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      document.getElementById('loadingOverlay').classList.add('flex');
+      document.getElementById('loadingText').textContent = "Loading Data from Google Sheets...";
 
-    const STORAGE_KEY = 'leaseRenewalMultiTabData';
+      try {
+        const response = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'load' })
+        });
+        const res = await response.json();
 
-    // UI Elements
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const loadingText = document.getElementById('loadingText');
-    const spreadsheetBody = document.getElementById('spreadsheetBody');
-    const excelInput = document.getElementById('excelInput');
-    const sheetSelectionArea = document.getElementById('sheetSelectionArea');
-    const sheetSelect = document.getElementById('sheetSelect');
-    const loadSheetBtn = document.getElementById('loadSheetBtn');
-    const confirmLoadSheetBtn = document.getElementById('confirmLoadSheetBtn');
-    const clearCurrentTabBtn = document.getElementById('clearCurrentTabBtn');
-    const tabsContainer = document.getElementById('tabsContainer');
-    const exportDriveBtn = document.getElementById('exportDriveBtn');
-    
-    // Search & Filter Elements
-    const searchInput = document.getElementById('searchInput');
-    const monthFilter = document.getElementById('monthFilter');
-    const statusFilter = document.getElementById('statusFilter');
+        if (res.success) {
+          appData = res.data;
+          const tabNames = Object.keys(appData);
+          if (tabNames.length > 0) {
+            activeTab = tabNames[0];
+            renderTabs();
+            renderSpreadsheet();
+          } else {
+            document.getElementById('spreadsheetBody').innerHTML = `
+              <tr>
+                <td colspan="5" class="px-4 py-12 text-center text-slate-400">
+                  No tabs found in the database. Import a sheet to begin.
+                </td>
+              </tr>`;
+          }
+        } else {
+          alert("Failed to load database: " + res.error);
+        }
+      } catch (error) {
+        console.error("Database Load Error:", error);
+        alert("Could not connect to the Google Apps Script. Check your URL and deployment settings.");
+      } finally {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('loadingOverlay').classList.remove('flex');
+      }
+    }
 
-    // Counters
-    const countPending = document.getElementById('countPending');
-    const countGenerated = document.getElementById('countGenerated');
-    const countSent = document.getElementById('countSent');
+    // --- DATABASE WRITE FUNCTIONS ---
+    async function syncToDatabase(tenant, tabName, actionType) {
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: actionType, 
+            tabName: tabName,
+            tenantName: tenant.tenantName,
+            unit: tenant.unit,
+            building: tenant.building,
+            computed20th: tenant.computed20th,
+            rent: tenant.rent,
+            status: tenant.status,
+            termLabel: tenant.termLabel,
+            reason: tenant.reason
+          })
+        });
+      } catch (e) {
+        console.error("Failed to sync with database:", e);
+      }
+    }
 
-    // Helper: Date computation
-    function computeDates(startContract, term) {
+    // --- HELPER FUNCTIONS ---
+    function formatPeso(amount) {
+      return '₱' + (Number(amount) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function parseDate(startContract, term) {
       let computed20th = '';
       let sixthDay = '';
       let termLabel = '';
@@ -592,13 +596,9 @@
       if (!isNaN(startD.getTime())) {
         const termString = String(term).toUpperCase().trim();
         const isMonthly = 
-          termString === 'M-M' || 
-          termString === 'MM' || 
-          termString.includes('MONTHLY') || 
-          termString === 'TRIAL MONTH' || 
-          termString === 'EXT. TRIAL' || 
-          termString === 'MONTH-MONTH' || 
-          termString === 'EXT. TRIAL +';
+          termString === 'M-M' || termString === 'MM' || termString.includes('MONTHLY') || 
+          termString === 'TRIAL MONTH' || termString === 'EXT. TRIAL' || 
+          termString === 'MONTH-MONTH' || termString === 'EXT. TRIAL +';
 
         if (isMonthly) {
           startD.setMonth(startD.getMonth() + 1);
@@ -626,46 +626,14 @@
       return { computed20th, sixthDay, termMonths, termLabel, folderMonth };
     }
 
-    function formatPeso(amount) {
-      return '₱' + (Number(amount) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    // LOCAL STORAGE FUNCTIONS
-    function saveToStorage() {
-      const dataToSave = {};
-      for (const tab in appData) {
-        dataToSave[tab] = appData[tab].map(t => {
-          const { generatedDoc, ...rest } = t; 
-          return rest;
-        });
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-    }
-
-    function loadFromStorage() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        try {
-          appData = JSON.parse(saved);
-          const tabNames = Object.keys(appData);
-          if (tabNames.length > 0) {
-            activeTab = tabNames[0]; 
-            renderTabs();
-            renderSpreadsheet();
-          }
-        } catch (e) {
-          console.error("Failed to parse local storage data", e);
-        }
-      }
-    }
-
-    // UI RENDERING
+    // --- UI RENDERING ---
     function renderTabs() {
+      const tabsContainer = document.getElementById('tabsContainer');
       tabsContainer.innerHTML = '';
       const tabNames = Object.keys(appData);
 
       if (tabNames.length === 0) {
-        tabsContainer.innerHTML = `<span class="text-sm text-slate-400 italic">No tabs imported yet.</span>`;
+        tabsContainer.innerHTML = `<span class="text-sm text-slate-400 italic">No tabs found.</span>`;
         return;
       }
 
@@ -673,79 +641,27 @@
         const isActive = tabName === activeTab;
         const tabBtn = document.createElement('button');
         
-        tabBtn.className = `px-4 py-2 rounded-t-lg font-bold text-sm transition-colors border-b-2 whitespace-nowrap cursor-grab ${
+        tabBtn.className = `px-4 py-2 rounded-t-lg font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${
           isActive 
           ? 'bg-white border-blue-600 text-blue-700 shadow-sm' 
           : 'bg-slate-200 border-transparent text-slate-600 hover:bg-slate-300'
         }`;
         tabBtn.textContent = tabName;
         
-        tabBtn.draggable = true;
-        tabBtn.dataset.tabName = tabName;
-
         tabBtn.addEventListener('click', () => {
           activeTab = tabName;
-          searchInput.value = ''; 
-          statusFilter.value = 'ALL';
+          document.getElementById('searchInput').value = ''; 
+          document.getElementById('statusFilter').value = 'ALL';
           renderTabs();
           renderSpreadsheet();
-        });
-
-        tabBtn.addEventListener('dragstart', (e) => {
-          draggedTabName = tabName;
-          tabBtn.classList.add('dragging');
-          e.dataTransfer.effectAllowed = 'move';
-        });
-
-        tabBtn.addEventListener('dragend', () => {
-          tabBtn.classList.remove('dragging');
-          draggedTabName = null;
-        });
-
-        tabBtn.addEventListener('dragover', (e) => {
-          e.preventDefault(); 
-        });
-
-        tabBtn.addEventListener('dragenter', (e) => {
-          e.preventDefault();
-          if (tabName !== draggedTabName) {
-            tabBtn.classList.add('bg-slate-300');
-          }
-        });
-
-        tabBtn.addEventListener('dragleave', () => {
-          tabBtn.classList.remove('bg-slate-300');
-        });
-
-        tabBtn.addEventListener('drop', (e) => {
-          e.preventDefault();
-          tabBtn.classList.remove('bg-slate-300');
-          
-          if (!draggedTabName || draggedTabName === tabName) return;
-
-          const newAppData = {};
-          const keys = Object.keys(appData);
-          
-          keys.forEach(key => {
-            if (key === tabName) {
-              newAppData[draggedTabName] = appData[draggedTabName];
-            }
-            if (key !== draggedTabName) {
-              newAppData[key] = appData[key];
-            }
-          });
-
-          appData = newAppData;
-          saveToStorage();
-          renderTabs(); 
         });
 
         tabsContainer.appendChild(tabBtn);
       });
     }
 
-    // POPULATE MONTH FILTER DROPDOWN
     function populateMonthFilter() {
+      const monthFilter = document.getElementById('monthFilter');
       monthFilter.innerHTML = '<option value="ALL">All Months</option>';
       
       if (!activeTab || !appData[activeTab]) return;
@@ -764,11 +680,7 @@
         }
       });
 
-      const sortedMonths = Array.from(uniqueMonths).sort((a, b) => {
-        return new Date(a) - new Date(b);
-      });
-
-      sortedMonths.forEach(monthStr => {
+      Array.from(uniqueMonths).sort((a, b) => new Date(a) - new Date(b)).forEach(monthStr => {
         const option = document.createElement('option');
         option.value = monthStr;
         option.textContent = monthStr;
@@ -779,6 +691,7 @@
     }
 
     function renderSpreadsheet() {
+      const spreadsheetBody = document.getElementById('spreadsheetBody');
       spreadsheetBody.innerHTML = '';
       
       let pending = 0, generated = 0, sent = 0;
@@ -791,21 +704,20 @@
               No data in this tab.
             </td>
           </tr>`;
-        countPending.textContent = `0 Pending`;
-        countGenerated.textContent = `0 Generated`;
-        countSent.textContent = `0 Sent`;
+        document.getElementById('countPending').textContent = `0 Pending`;
+        document.getElementById('countGenerated').textContent = `0 Generated`;
+        document.getElementById('countSent').textContent = `0 Sent`;
         return;
       }
 
-      if (monthFilter.value === 'ALL') {
+      if (document.getElementById('monthFilter').value === 'ALL') {
          populateMonthFilter();
       }
 
       const tenants = appData[activeTab];
-
-      const searchTerm = searchInput.value.toLowerCase();
-      const statusValue = statusFilter.value;
-      const monthValue = monthFilter.value;
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const statusValue = document.getElementById('statusFilter').value;
+      const monthValue = document.getElementById('monthFilter').value;
 
       tenants.forEach(t => {
         if (t.status === 'Pending') pending++;
@@ -814,10 +726,7 @@
       });
 
       const filteredTenants = tenants.filter(t => {
-        const matchesSearch = 
-          (t.tenantName || '').toLowerCase().includes(searchTerm) || 
-          (t.unit || '').toLowerCase().includes(searchTerm);
-          
+        const matchesSearch = (t.tenantName || '').toLowerCase().includes(searchTerm) || (t.unit || '').toLowerCase().includes(searchTerm);
         const matchesStatus = (statusValue === 'ALL') || (t.status === statusValue);
 
         let matchesMonth = true;
@@ -825,14 +734,11 @@
           try {
             const d = new Date(t.computed20th);
             if (!isNaN(d)) {
-              const tenantMonthStr = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-              matchesMonth = (tenantMonthStr === monthValue);
+              matchesMonth = (d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) === monthValue);
             } else {
               matchesMonth = false;
             }
-          } catch(e) {
-            matchesMonth = false;
-          }
+          } catch(e) { matchesMonth = false; }
         }
 
         return matchesSearch && matchesStatus && matchesMonth;
@@ -848,24 +754,18 @@
           </tr>`;
       } else {
         filteredTenants.forEach((tenant) => {
-          const originalIndex = tenants.findIndex(t => t === tenant);
-
           let badgeClass = 'bg-yellow-100 text-yellow-800';
           if (tenant.status === 'Generated') badgeClass = 'bg-blue-100 text-blue-800';
           if (tenant.status === 'Sent') badgeClass = 'bg-green-100 text-green-800';
 
           let actionBtn = '';
           if (tenant.status === 'Pending') {
-            actionBtn = `<button onclick="generateSingle(${originalIndex})" class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-900 transition-colors flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Generate</button>`;
+            actionBtn = `<button onclick="generateSingle('${tenant.tenantName}')" class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-900 transition-colors">⚙️ Generate</button>`;
           } else if (tenant.status === 'Generated') {
             actionBtn = `
               <div class="flex justify-end gap-1">
-                <button onclick="regenerateSingle(${originalIndex})" class="bg-slate-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 transition-colors flex items-center gap-1" title="Re-generate and overwrite Drive file">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Regenerate
-                </button>
-                <button onclick="markAsSent(${originalIndex})" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition-colors flex items-center gap-1">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Mark as Sent
-                </button>
+                <button onclick="regenerateSingle('${tenant.tenantName}')" class="bg-slate-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 transition-colors" title="Re-generate and overwrite Drive file">↻ Regenerate</button>
+                <button onclick="markAsSent('${tenant.tenantName}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition-colors">✅ Mark as Sent</button>
               </div>
             `;
           } else {
@@ -891,17 +791,17 @@
         });
       }
 
-      countPending.textContent = `${pending} Pending`;
-      countGenerated.textContent = `${generated} Generated`;
-      countSent.textContent = `${sent} Sent`;
+      document.getElementById('countPending').textContent = `${pending} Pending`;
+      document.getElementById('countGenerated').textContent = `${generated} Generated`;
+      document.getElementById('countSent').textContent = `${sent} Sent`;
     }
 
     // Add Event Listeners for Search & Filter
-    searchInput.addEventListener('input', renderSpreadsheet);
-    statusFilter.addEventListener('change', renderSpreadsheet);
-    monthFilter.addEventListener('change', renderSpreadsheet);
+    document.getElementById('searchInput').addEventListener('input', renderSpreadsheet);
+    document.getElementById('statusFilter').addEventListener('change', renderSpreadsheet);
+    document.getElementById('monthFilter').addEventListener('change', renderSpreadsheet);
 
-    // PDF GENERATION
+    // --- PDF GENERATION LOGIC ---
     async function generatePDFDoc(tenant) {
       try {
         document.getElementById('outDate').textContent = tenant.date || '';
@@ -952,23 +852,24 @@
       }
     }
 
-    // ACTIONS
-    window.generateSingle = async function(index) {
-      const tenant = appData[activeTab][index];
+    // --- ACTIONS ---
+    window.generateSingle = async function(tenantName) {
+      const tenantIndex = appData[activeTab].findIndex(t => t.tenantName === tenantName);
+      if (tenantIndex === -1) return;
+      const tenant = appData[activeTab][tenantIndex];
       
-      loadingOverlay.classList.remove('hidden');
-      loadingOverlay.classList.add('flex');
-      loadingText.textContent = `Generating PDF for ${tenant.tenantName}...`;
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      document.getElementById('loadingOverlay').classList.add('flex');
+      document.getElementById('loadingText').textContent = `Generating PDF for ${tenant.tenantName}...`;
 
       try {
         const doc = await generatePDFDoc(tenant);
         const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
         
         doc.save(fileName);
-        tenant.generatedDoc = doc; 
 
         if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-          loadingText.textContent = `Uploading to Drive...`;
+          document.getElementById('loadingText').textContent = `Uploading to Drive...`;
           
           const monthName = tenant.folderMonth || "Unknown Month";
           const propertyName = tenant.building || "Unknown Property";
@@ -988,34 +889,37 @@
         }
 
         tenant.status = 'Generated';
-        saveToStorage(); 
-        renderSpreadsheet();
+        renderSpreadsheet(); 
+        
+        await syncToDatabase(tenant, activeTab, 'update');
+
       } catch (error) {
         console.error(error);
         alert("Error generating PDF: " + error.message);
       } finally {
-        loadingOverlay.classList.add('hidden');
-        loadingOverlay.classList.remove('flex');
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('loadingOverlay').classList.remove('flex');
       }
     };
 
     // REGENERATE ACTION
-    window.regenerateSingle = async function(index) {
-      const tenant = appData[activeTab][index];
+    window.regenerateSingle = async function(tenantName) {
+      const tenantIndex = appData[activeTab].findIndex(t => t.tenantName === tenantName);
+      if (tenantIndex === -1) return;
+      const tenant = appData[activeTab][tenantIndex];
       
-      loadingOverlay.classList.remove('hidden');
-      loadingOverlay.classList.add('flex');
-      loadingText.textContent = `Regenerating PDF for ${tenant.tenantName}...`;
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      document.getElementById('loadingOverlay').classList.add('flex');
+      document.getElementById('loadingText').textContent = `Regenerating PDF for ${tenant.tenantName}...`;
 
       try {
         const doc = await generatePDFDoc(tenant);
         const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
         
         doc.save(fileName);
-        tenant.generatedDoc = doc; 
 
         if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-          loadingText.textContent = `Re-uploading to Drive...`;
+          document.getElementById('loadingText').textContent = `Re-uploading to Drive...`;
           
           const monthName = tenant.folderMonth || "Unknown Month";
           const propertyName = tenant.building || "Unknown Property";
@@ -1039,112 +943,62 @@
         console.error(error);
         alert("Error regenerating PDF: " + error.message);
       } finally {
-        loadingOverlay.classList.add('hidden');
-        loadingOverlay.classList.remove('flex');
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('loadingOverlay').classList.remove('flex');
       }
     };
 
-    window.markAsSent = function(index) {
-      appData[activeTab][index].status = 'Sent';
-      saveToStorage(); 
+    window.markAsSent = async function(tenantName) {
+      const tenantIndex = appData[activeTab].findIndex(t => t.tenantName === tenantName);
+      if (tenantIndex === -1) return;
+      const tenant = appData[activeTab][tenantIndex];
+      
+      tenant.status = 'Sent';
       renderSpreadsheet();
+
+      await syncToDatabase(tenant, activeTab, 'update');
     };
 
-    // EXPORT TO DRIVE
-    exportDriveBtn.addEventListener('click', async () => {
-      if (Object.keys(appData).length === 0) {
-        return alert("No data to export.");
+    // --- MANUAL ADD ---
+    document.getElementById('manualAddBtn').addEventListener('click', async () => {
+      const tenantName = document.getElementById('inputTenant').value;
+      if (!tenantName) return alert("Enter Tenant Name");
+
+      if (!activeTab) {
+        alert("Please select or import a tab first.");
+        return;
       }
-      if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-        return alert("Please configure your Google Apps Script URL first.");
-      }
 
-      loadingOverlay.classList.remove('hidden');
-      loadingOverlay.classList.add('flex');
-      loadingText.textContent = "Preparing Excel Export...";
+      const startContract = document.getElementById('inputStartDate').value;
+      const term = document.getElementById('inputTerm').value;
+      const dates = parseDate(startContract, term);
 
-      try {
-        // Create a new Workbook
-        const wb = XLSX.utils.book_new();
+      const newTenant = {
+        tenantName: tenantName,
+        building: document.getElementById('inputBuilding').value,
+        unit: document.getElementById('inputUnit').value,
+        rent: document.getElementById('inputRent').value,
+        computed20th: dates.computed20th,
+        termLabel: dates.termLabel,
+        status: 'Pending',
+        reason: '—'
+      };
 
-        // Loop through all tabs and add them as separate sheets
-        for (const tabName in appData) {
-          const tenants = appData[tabName];
-          
-          // Format data for Excel
-          const excelData = tenants.map(t => ({
-            "Tenant Name": t.tenantName || '',
-            "Unit": t.unit || '',
-            "Building": t.building || '',
-            "Computed Due Date": t.computed20th || '',
-            "Monthly Rent": t.rent || 0,
-            "Status": t.status || ''
-          }));
+      appData[activeTab].push(newTenant);
+      renderSpreadsheet();
+      document.getElementById('inputTenant').value = '';
 
-          // Create worksheet
-          const ws = XLSX.utils.json_to_sheet(excelData);
-          
-          // Append to workbook
-          XLSX.utils.book_append_sheet(wb, ws, tabName);
-        }
-
-        // Generate Base64 string of the XLSX file
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
-        
-        const fileName = `Lease_Renewals_Master_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
-
-        loadingText.textContent = "Uploading Excel to Drive...";
-
-        const payload = {
-          action: 'export',
-          fileName: fileName,
-          base64: wbout,
-          rootFolderId: ROOT_FOLDER_ID
-        };
-
-        const response = await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-
-        const res = await response.json();
-
-        if (res.success) {
-          alert(`Successfully exported all tabs to Google Drive!\n\nView Link: ${res.fileUrl}`);
-        } else {
-          alert('Export failed: ' + res.error);
-        }
-
-      } catch (error) {
-        console.error(error);
-        alert("Error exporting data: " + error.message);
-      } finally {
-        loadingOverlay.classList.add('hidden');
-        loadingOverlay.classList.remove('flex');
-      }
+      await syncToDatabase(newTenant, activeTab, 'save');
     });
 
-    document.getElementById('clearCurrentTabBtn').addEventListener('click', () => {
-      if (!activeTab) return;
-      if (confirm(`Are you sure you want to clear all data in the "${activeTab}" tab?`)) {
-        delete appData[activeTab];
-        const remainingTabs = Object.keys(appData);
-        activeTab = remainingTabs.length > 0 ? remainingTabs[0] : null;
-        
-        saveToStorage();
-        renderTabs();
-        renderSpreadsheet();
-      }
-    });
-
-    // EXCEL IMPORT
-    excelInput.addEventListener('change', (e) => {
+    // --- EXCEL IMPORT ---
+    document.getElementById('excelInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      loadingOverlay.classList.remove('hidden');
-      loadingOverlay.classList.add('flex');
-      loadingText.textContent = "Reading Excel File...";
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      document.getElementById('loadingOverlay').classList.add('flex');
+      document.getElementById('loadingText').textContent = "Reading Excel File...";
 
       const reader = new FileReader();
       reader.onload = (evt) => {
@@ -1152,6 +1006,7 @@
           const data = new Uint8Array(evt.target.result);
           workbookCache = XLSX.read(data, { type: 'array', cellDates: true });
           
+          const sheetSelect = document.getElementById('sheetSelect');
           sheetSelect.innerHTML = '';
           workbookCache.SheetNames.forEach(sheetName => {
             const option = document.createElement('option');
@@ -1160,23 +1015,26 @@
             sheetSelect.appendChild(option);
           });
 
-          sheetSelectionArea.classList.remove('hidden');
-
+          document.getElementById('sheetSelectionArea').classList.remove('hidden');
         } catch (error) {
           console.error("Excel Parse Error:", error);
           alert("Error reading the Excel file. It may be corrupted.");
         } finally {
-          loadingOverlay.classList.add('hidden');
-          loadingOverlay.classList.remove('flex');
-          excelInput.value = ''; 
+          document.getElementById('loadingOverlay').classList.add('hidden');
+          document.getElementById('loadingOverlay').classList.remove('flex');
+          document.getElementById('excelInput').value = ''; 
         }
       };
       reader.readAsArrayBuffer(file);
     });
 
-    confirmLoadSheetBtn.addEventListener('click', () => {
+    document.getElementById('confirmLoadSheetBtn').addEventListener('click', async () => {
       if (!workbookCache) return;
-      const selectedSheetName = sheetSelect.value;
+      const selectedSheetName = document.getElementById('sheetSelect').value;
+
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      document.getElementById('loadingOverlay').classList.add('flex');
+      document.getElementById('loadingText').textContent = "Uploading to Database...";
 
       try {
         const worksheet = workbookCache.Sheets[selectedSheetName];
@@ -1191,7 +1049,7 @@
           appData[selectedSheetName] = [];
         }
 
-        json.forEach(row => {
+        for (const row of json) {
           const rowKeys = Object.keys(row).reduce((acc, key) => {
             acc[key.trim().toUpperCase()] = row[key];
             return acc;
@@ -1199,159 +1057,45 @@
 
           const startContract = rowKeys['START OF CONTRACT'] || '';
           const term = rowKeys['LEASE TERM'] || '12';
-          const dates = computeDates(startContract, term);
+          const dates = parseDate(startContract, term);
 
-          appData[selectedSheetName].push({
-            date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+          const newTenant = {
             tenantName: rowKeys['NAME'] || 'Unknown',
             building: rowKeys['BUILDING'] || "Eve's Residences",
             unit: rowKeys['UNIT'] || '',
             rent: rowKeys['MONTHLY RENT'] || 0,
-            choice: rowKeys['RESPONSE'] || 'YES',
-            reason: rowKeys['REASON'] || '—',
             computed20th: dates.computed20th,
-            sixthDay: dates.sixthDay,
-            termMonths: dates.termMonths,
             termLabel: dates.termLabel,
-            folderMonth: dates.folderMonth, 
-            status: 'Pending'
-          });
-        });
+            status: 'Pending',
+            reason: rowKeys['REASON'] || '—'
+          };
+
+          appData[selectedSheetName].push(newTenant);
+          
+          await syncToDatabase(newTenant, selectedSheetName, 'save');
+        }
 
         activeTab = selectedSheetName;
-        searchInput.value = ''; 
-        statusFilter.value = 'ALL'; 
+        document.getElementById('searchInput').value = ''; 
+        document.getElementById('statusFilter').value = 'ALL'; 
 
-        saveToStorage(); 
         renderTabs(); 
         renderSpreadsheet();
         
-        sheetSelectionArea.classList.add('hidden');
+        document.getElementById('sheetSelectionArea').classList.add('hidden');
         workbookCache = null;
 
       } catch (error) {
         console.error("Sheet Load Error:", error);
         alert("Error loading the selected sheet.");
+      } finally {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('loadingOverlay').classList.remove('flex');
       }
     });
 
-    // MANUAL ADD
-    document.getElementById('manualAddBtn').addEventListener('click', () => {
-      const tenantName = document.getElementById('inputTenant').value;
-      if (!tenantName) return alert("Enter Tenant Name");
-
-      if (!activeTab) {
-        activeTab = "Manual Entry";
-        appData[activeTab] = [];
-        renderTabs();
-      }
-
-      const startContract = document.getElementById('inputStartDate').value;
-      const term = document.getElementById('inputTerm').value;
-      const dates = computeDates(startContract, term);
-
-      appData[activeTab].push({
-        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-        tenantName: tenantName,
-        building: document.getElementById('inputBuilding').value,
-        unit: document.getElementById('inputUnit').value,
-        rent: document.getElementById('inputRent').value,
-        choice: 'YES',
-        reason: '—',
-        computed20th: dates.computed20th,
-        sixthDay: dates.sixthDay,
-        termMonths: dates.termMonths,
-        termLabel: dates.termLabel,
-        folderMonth: dates.folderMonth, 
-        status: 'Pending'
-      });
-
-      saveToStorage(); 
-      renderSpreadsheet();
-      document.getElementById('inputTenant').value = '';
-    });
-
-    // BATCH GENERATE
-    document.getElementById('batchGenerateBtn').addEventListener('click', async () => {
-      if (!activeTab || !appData[activeTab]) return alert("No active tab.");
-      
-      const pendingTenants = appData[activeTab].filter(t => t.status === 'Pending');
-      if (pendingTenants.length === 0) return alert("No pending tenants in this tab.");
-
-      loadingOverlay.classList.remove('hidden');
-      loadingOverlay.classList.add('flex');
-
-      for (let i = 0; i < pendingTenants.length; i++) {
-        const tenant = pendingTenants[i];
-        loadingText.textContent = `Generating ${i + 1} of ${pendingTenants.length}: ${tenant.tenantName}...`;
-        
-        const doc = await generatePDFDoc(tenant);
-        tenant.generatedDoc = doc;
-        
-        if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-          loadingText.textContent = `Uploading ${i + 1} of ${pendingTenants.length}: ${tenant.tenantName} to Drive...`;
-          
-          const monthName = tenant.folderMonth || "Unknown Month";
-          const propertyName = tenant.building || "Unknown Property";
-          const base64Data = doc.output('datauristring').split(',')[1];
-
-          await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-              fileName: `Lease Renewal - ${tenant.tenantName}.pdf`,
-              base64: base64Data,
-              rootFolderId: ROOT_FOLDER_ID,
-              propertyName: propertyName,
-              monthName: monthName,
-              tenantName: tenant.tenantName
-            })
-          });
-        }
-
-        tenant.status = 'Generated';
-        saveToStorage(); 
-        renderSpreadsheet();
-      }
-
-      loadingOverlay.classList.add('hidden');
-      loadingOverlay.classList.remove('flex');
-      alert("Batch generation complete for this tab.");
-    });
-
-    // BATCH ZIP DOWNLOAD
-    document.getElementById('batchDownloadZipBtn').addEventListener('click', async () => {
-      if (!activeTab || !appData[activeTab]) return alert("No active tab.");
-      
-      const generatedTenants = appData[activeTab].filter(t => t.generatedDoc);
-      
-      if (generatedTenants.length === 0) {
-        return alert("No PDFs available to ZIP in this tab currently. If you refreshed the page, you must click 'Generate' again to recreate the files.");
-      }
-
-      loadingOverlay.classList.remove('hidden');
-      loadingOverlay.classList.add('flex');
-      loadingText.textContent = "Zipping files for download...";
-
-      const zip = new JSZip();
-      const zipFolder = zip.folder(`Lease_Renewals_${activeTab}`);
-
-      generatedTenants.forEach(tenant => {
-        const blob = tenant.generatedDoc.output('blob');
-        zipFolder.file(`Lease Renewal - ${tenant.tenantName}.pdf`, blob);
-      });
-
-      const content = await zip.generateAsync({ type: "blob" });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(content);
-      link.download = `Lease_Renewals_${activeTab}.zip`;
-      link.click();
-
-      loadingOverlay.classList.add('hidden');
-      loadingOverlay.classList.remove('flex');
-    });
-
-    // INIT ON LOAD
-    loadFromStorage();
+    // Load data on startup
+    window.onload = initDatabase;
 
   </script>
 </body>
