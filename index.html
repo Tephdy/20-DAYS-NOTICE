@@ -275,7 +275,7 @@
             <tr>
               <th class="px-4 py-2 border-b">Tenant Name</th>
               <th class="px-4 py-2 border-b">Unit</th>
-              <th class="px-4 py-2 border-b">Computed Notice Date</th>
+              <th class="px-4 py-2 border-b">Computed Due Date</th>
               <th class="px-4 py-2 border-b">Status</th>
               <th class="px-4 py-2 border-b text-center">PDF</th>
               <th class="px-4 py-2 border-b text-right">Actions</th>
@@ -349,10 +349,7 @@
         <div class="list-item"><span class="num">4.</span>Failure to confirm may result in penalties and the unit being offered to other tenants.</div>
         <div class="list-item"><span class="num">5.</span><strong>DIGITAL DOCUMENTS AND INTENT LETTER CLAUSE:</strong> All lease-related documents may be executed electronically and shall be considered valid and legally binding under Republic Act No. 8792 (Electronic Commerce Act of the Philippines).</div>
       </div>
-      <div class="my-6">
-        <strong>Advance payment (20% of total contract value):</strong> <span id="outAdvance"></span><br>
-        <span class="text-[15px] text-slate-800 italic">(based on <span id="outRent2"></span>/month × <span id="outTermMonths"></span> months = <span id="outTotalContract"></span>)</span>
-      </div>
+      
       <div class="mt-16 w-[250px]">
         <div class="border-t-2 border-black pt-1 text-center"><span id="outSignature2"></span></div>
         <div class="text-center text-sm mt-1">Tenant's Signature</div>
@@ -365,7 +362,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgtKMT1QDmicvfc1AvrR-JaEAqxd5qZ-yuQow-fswHmjImc9r2V_bwffxsbR4bKEJ6/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbUVSvuPANHjYm5mH3XAhHdZ76gky-DNpiqR2ncyhnNauuEWJM8uJ_JcWnIgPl50MB/exec';
     const ROOT_FOLDER_ID = '16qLfbrPeU-H_UH0QUl2lIqUoqf5_nVLQ'; 
 
     let appData = {};
@@ -737,11 +734,17 @@
     };
 
     async function generatePDFDoc(tenant) {
+      // Helper function to safely set textContent and avoid crashes if element is deleted
+      const safeSetText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+
       try {
-        document.getElementById('outDate').textContent = tenant.date || '';
-        document.getElementById('outTenant').textContent = tenant.tenantName || '';
-        document.getElementById('outBuilding').textContent = tenant.building || '';
-        document.getElementById('outUnit').textContent = tenant.unit || '';
+        safeSetText('outDate', tenant.date || '');
+        safeSetText('outTenant', tenant.tenantName || '');
+        safeSetText('outBuilding', tenant.building || '');
+        safeSetText('outUnit', tenant.unit || '');
         
         let pdfDateStr = tenant.computed20th;
         if (pdfDateStr && pdfDateStr.includes('-')) {
@@ -749,23 +752,20 @@
            if (!isNaN(d)) pdfDateStr = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         }
 
-        document.getElementById('outDay20').textContent = pdfDateStr || '';
-        document.getElementById('outDay20b').textContent = pdfDateStr || '';
-        document.getElementById('outDay20c').textContent = pdfDateStr || '';
-        document.getElementById('outSixthDay').textContent = tenant.sixthDay || '';
-        document.getElementById('outCheckYes').textContent = (tenant.choice && tenant.choice.toUpperCase() === 'YES') ? '[ X ]' : '[   ]';
-        document.getElementById('outCheckNo').textContent = (tenant.choice && tenant.choice.toUpperCase() === 'NO') ? '[ X ]' : '[   ]';
-        document.getElementById('outReason').textContent = tenant.reason || '—';
-        document.getElementById('outSignature1').textContent = tenant.tenantName || '';
+        safeSetText('outDay20', pdfDateStr || '');
+        safeSetText('outDay20b', pdfDateStr || '');
+        safeSetText('outDay20c', pdfDateStr || '');
+        safeSetText('outSixthDay', tenant.sixthDay || '');
+        safeSetText('outCheckYes', (tenant.choice && tenant.choice.toUpperCase() === 'YES') ? '[ X ]' : '[   ]');
+        safeSetText('outCheckNo', (tenant.choice && tenant.choice.toUpperCase() === 'NO') ? '[ X ]' : '[   ]');
+        safeSetText('outReason', tenant.reason || '—');
+        safeSetText('outSignature1', tenant.tenantName || '');
         
-        document.getElementById('outTenant2').textContent = tenant.tenantName || '';
-        document.getElementById('outTermLabel').textContent = tenant.termLabel || '';
-        document.getElementById('outRent').textContent = formatPeso(tenant.rent);
-        document.getElementById('outRent2').textContent = formatPeso(tenant.rent);
-        document.getElementById('outAdvance').textContent = formatPeso((Number(tenant.rent) || 0) * (tenant.termMonths || 12) * 0.2);
-        document.getElementById('outTermMonths').textContent = tenant.termMonths || 12;
-        document.getElementById('outTotalContract').textContent = formatPeso((Number(tenant.rent) || 0) * (tenant.termMonths || 12));
-        document.getElementById('outSignature2').textContent = tenant.tenantName || '';
+        safeSetText('outTenant2', tenant.tenantName || '');
+        safeSetText('outTermLabel', tenant.termLabel || '');
+        safeSetText('outRent', formatPeso(tenant.rent));
+        safeSetText('outRent2', formatPeso(tenant.rent));
+        safeSetText('outSignature2', tenant.tenantName || '');
       } catch (err) {
         throw new Error("Failed to populate template: " + err.message);
       }
@@ -804,7 +804,7 @@
 
       try {
         const doc = await generatePDFDoc(tenant);
-        const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
+        const fileName = `Lease Renewal Notice - ${tenant.tenantName}.pdf`;
 
         if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
           document.getElementById('loadingText').textContent = `Uploading to Drive...`;
