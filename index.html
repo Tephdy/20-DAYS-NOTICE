@@ -365,7 +365,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzeMXYhjhnP0Wg6hTohryh28SN2rHmSiRLRTm6Cx6OJxzNwIG2SpaDslofrjxsYy7ti/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgtKMT1QDmicvfc1AvrR-JaEAqxd5qZ-yuQow-fswHmjImc9r2V_bwffxsbR4bKEJ6/exec';
     const ROOT_FOLDER_ID = '16qLfbrPeU-H_UH0QUl2lIqUoqf5_nVLQ'; 
 
     let appData = {};
@@ -520,11 +520,11 @@
         let actualEndD = new Date(startD);
         actualEndD.setMonth(actualEndD.getMonth() + termMonths);
 
-        let noticeDate = new Date(startD);
+        let noticeDate = new Date(actualEndD);
         if (isMonthly) {
-          noticeDate.setDate(noticeDate.getDate() + 10);
+          noticeDate.setDate(noticeDate.getDate() - 10);
         } else {
-          noticeDate.setDate(noticeDate.getDate() + 20);
+          noticeDate.setDate(noticeDate.getDate() - 20);
         }
 
         const today = new Date();
@@ -809,7 +809,6 @@
         if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
           document.getElementById('loadingText').textContent = `Uploading to Drive...`;
           
-          // FIXED: Ensure monthName is never "Unknown Month"
           let monthName = tenant.folderMonth;
           if (!monthName || monthName === 'Unknown Month' || monthName.trim() === '') {
             if (tenant.computed20th && tenant.computed20th.includes('-')) {
@@ -868,7 +867,6 @@
         if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
           document.getElementById('loadingText').textContent = `Re-uploading to Drive...`;
           
-          // FIXED: Ensure monthName is never "Unknown Month"
           let monthName = tenant.folderMonth;
           if (!monthName || monthName === 'Unknown Month' || monthName.trim() === '') {
             if (tenant.computed20th && tenant.computed20th.includes('-')) {
@@ -910,7 +908,6 @@
       }
     };
 
-    // --- BATCH GENERATE ALL ACTION ---
     document.getElementById('batchGenerateBtn').addEventListener('click', async () => {
       if (!activeTab) return alert("No active tab selected.");
       
@@ -937,7 +934,6 @@
           if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
             document.getElementById('loadingText').textContent = `Uploading (${i + 1}/${pendingTenants.length}): ${tenant.tenantName}...`;
             
-            // FIXED: Ensure monthName is never "Unknown Month"
             let monthName = tenant.folderMonth;
             if (!monthName || monthName === 'Unknown Month' || monthName.trim() === '') {
               if (tenant.computed20th && tenant.computed20th.includes('-')) {
@@ -963,7 +959,7 @@
               tenant.pdfUrl = uploadData.fileUrl;
             }
           } else {
-            doc.save(fileName); // Fallback local save only if no API URL
+            doc.save(fileName);
           }
 
           tenant.status = 'Generated';
@@ -981,7 +977,6 @@
       }
     });
 
-    // --- NEW BATCH DOWNLOAD ZIP ACTION WITH FOLDERS ---
     document.getElementById('batchDownloadZipBtn').addEventListener('click', async () => {
       if (!activeTab) return alert("No active tab selected.");
 
@@ -1008,14 +1003,12 @@
           try {
             document.getElementById('loadingText').textContent = `Downloading (${i + 1}/${generatedTenants.length}): ${tenant.tenantName}...`;
             
-            // Fetch the actual PDF from Google Drive URL
             const response = await fetch(tenant.pdfUrl);
             if (!response.ok) throw new Error("Network response was not ok");
             
             const blob = await response.blob();
             const fileName = `Lease Renewal - ${tenant.tenantName}.pdf`;
             
-            // FIXED: Ensure folder structure handles missing properties gracefully
             const propertyName = tenant.building || "Unknown Property";
             
             let monthName = tenant.folderMonth;
@@ -1045,7 +1038,6 @@
         
         const zipFileName = `Lease Renewals - ${activeTab} - ${new Date().toISOString().split('T')[0]}.zip`;
         
-        // Trigger Download
         const a = document.createElement("a");
         a.href = URL.createObjectURL(content);
         a.download = zipFileName;
