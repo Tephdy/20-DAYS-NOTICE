@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>20-Day Notice Management System</title>
+  <title>Notice Management System</title>
   <link rel="icon" type="image/png" href="img/logo.ico">
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -84,9 +84,7 @@
     <p class="text-slate-300 mt-2">Communicating with Google Sheets.</p>
   </div>
 
-  <!-- ============================================================
-       EDIT TENANT MODAL (CRUD: Read + Update)
-       ============================================================ -->
+  <!-- EDIT TENANT MODAL -->
   <div id="editTenantModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
       <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-2xl">
@@ -117,7 +115,7 @@
           <input type="date" id="editStartDate" class="w-full px-3 py-2 border rounded text-sm">
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Computed 20th Day <span class="text-slate-400 normal-case font-normal">(leave blank to auto-compute)</span></label>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Computed Notice Deadline <span class="text-slate-400 normal-case font-normal">(leave blank to auto-compute)</span></label>
           <input type="date" id="editComputed20th" class="w-full px-3 py-2 border rounded text-sm">
         </div>
         <div class="grid grid-cols-2 gap-2">
@@ -125,6 +123,8 @@
             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Term</label>
             <select id="editTerm" class="w-full px-3 py-2 border rounded text-sm bg-white">
               <option value="M-M">M-M (Monthly)</option>
+              <option value="Trial">Trial</option>
+              <option value="Ext. Trial">Extended Trial</option>
               <option value="6">6 months</option>
               <option value="12">1 year</option>
               <option value="24">2 years</option>
@@ -165,7 +165,7 @@
   <div class="w-full bg-white shadow-sm border border-slate-300 rounded-t-lg mb-2 overflow-hidden shrink-0">
     <div class="bg-[#217346] text-white px-4 py-1 flex justify-between items-center text-sm">
       <div class="flex items-center gap-4">
-        <span class="font-bold">20-Day Notice Management System</span>
+        <span class="font-bold">Notice Management System</span>
         <span class="opacity-75 text-xs">Connected to Google Sheets</span>
       </div>
     </div>
@@ -295,6 +295,8 @@
             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Term</label>
             <select id="inputTerm" class="w-full px-3 py-2 border rounded text-sm bg-white">
               <option value="M-M">M-M (Monthly)</option>
+              <option value="Trial">Trial</option>
+              <option value="Ext. Trial">Extended Trial</option>
               <option value="6">6 months</option>
               <option value="12" selected>1 year</option>
               <option value="24">2 years</option>
@@ -353,7 +355,7 @@
             <tr>
               <th class="px-4 py-2 border-b">Tenant Name</th>
               <th class="px-4 py-2 border-b">Unit</th>
-              <th class="px-4 py-2 border-b">Computed 20th Day</th>
+              <th class="px-4 py-2 border-b">Notice Deadline</th>
               <th class="px-4 py-2 border-b">Status</th>
               <th class="px-4 py-2 border-b text-center">PDF</th>
               <th class="px-4 py-2 border-b text-right">Actions</th>
@@ -373,7 +375,7 @@
       <div class="w-full flex justify-center mb-8">
         <img src="img/1.png" alt="Logo" style="max-height: 80px;" onerror="this.style.display='none'">
       </div>
-      <div class="text-center font-bold text-[17px] uppercase mb-6 tracking-wide">20‑DAY NOTICE & ADVANCE AGREEMENT FOR RENEWAL OF CONTRACT</div>
+      <div id="pdfTitleHeader" class="text-center font-bold text-[17px] uppercase mb-6 tracking-wide">20‑DAY NOTICE & ADVANCE AGREEMENT FOR RENEWAL OF CONTRACT</div>
       <div class="font-bold text-[16px] mb-2">Letter of Intent</div>
       <div class="flex flex-wrap justify-between mb-4">
         <span>Date: <span id="outDate"></span></span>
@@ -381,16 +383,16 @@
         <span>Building: <span id="outBuilding"></span></span>
         <span>Unit: <span id="outUnit"></span></span>
       </div>
-      <p class="mb-4">This serves as your official 20‑day notice prior to the expiration of your current Lease Contract on: <strong id="outDay20"></strong>. Please be guided by the following terms and conditions regarding contract renewal:</p>
+      <p class="mb-4">This serves as your official <span id="outNoticeDaysLabel">20</span>‑day notice prior to the expiration of your current Lease Contract on: <strong id="outDay20"></strong>. Please be guided by the following terms and conditions regarding contract renewal:</p>
       <div class="font-bold text-[16px] uppercase mt-6 mb-3">TERMS AND CONDITIONS</div>
       <div>
-        <div class="list-item"><span class="num">1.</span><strong>Contract Signing Period</strong> – The tenant must sign the renewal contract on or before the 20th day prior to the end of the current contract period.</div>
-        <div class="list-item"><span class="num">2.</span><strong>Non-Renewal Notice</strong> – If the tenant does not wish to renew, a written notice of non-renewal must be submitted to Management through official Messenger communication on or before the 20th day prior to contract expiration.<div class="ml-6 mt-1">a. Your 20th day will fall on: <span id="outDay20b"></span></div></div>
-        <div class="list-item"><span class="num">3.</span><strong>Failure to Comply (Grace Period: 5 Days After the 20th Day)</strong> – If the tenant fails to confirm renewal or non-renewal within five (5) days after the 20th day, a penalty shall apply starting on the 6th day.<div class="ml-6 mt-1">a. Penalty start date (6th day): <strong id="outSixthDay"></strong></div><div class="ml-6">b. A penalty of ₱500.00 per day shall be imposed until the tenant provides written confirmation.</div></div>
+        <div class="list-item"><span class="num">1.</span><strong>Contract Signing Period</strong> – The tenant must sign the renewal contract on or before the <span id="outTermDays1">20th</span> day prior to the end of the current contract period.</div>
+        <div class="list-item"><span class="num">2.</span><strong>Non-Renewal Notice</strong> – If the tenant does not wish to renew, a written notice of non-renewal must be submitted to Management through official Messenger communication on or before the <span id="outTermDays2">20th</span> day prior to contract expiration.<div class="ml-6 mt-1">a. Your notice deadline will fall on: <span id="outDay20b"></span></div></div>
+        <div class="list-item"><span class="num">3.</span><strong>Failure to Comply (Grace Period: 5 Days After the Deadline)</strong> – If the tenant fails to confirm renewal or non-renewal within five (5) days after the deadline, a penalty shall apply starting on the 6th day.<div class="ml-6 mt-1">a. Penalty start date: <strong id="outSixthDay"></strong></div><div class="ml-6">b. A penalty of ₱500.00 per day shall be imposed until the tenant provides written confirmation.</div></div>
         <div class="list-item"><span class="num">4.</span><strong>Management Right to Market the Unit</strong> – After the grace period and prior to contract expiration, Management reserves the right to market and offer the unit to prospective tenants if no confirmation has been received.</div>
         <div class="list-item"><span class="num">5.</span><strong>Deduction from Security Deposit</strong> – Management reserves the right to deduct all applicable penalties and charges from the tenant's Security Deposit without further notice.</div>
         <div class="list-item"><span class="num">6.</span><strong>Management Discretion on Renewal</strong> – Renewal is not automatic and is subject to Management approval based on the tenant's compliance, conduct, and payment history.</div>
-        <div class="list-item"><span class="num">7.</span><strong>No Further Reminder Clause</strong> – The 20-day notice period shall not require any further reminder. The tenant is fully aware and responsible for compliance within the prescribed period.</div>
+        <div class="list-item"><span class="num">7.</span><strong>No Further Reminder Clause</strong> – The notice period shall not require any further reminder. The tenant is fully aware and responsible for compliance within the prescribed period.</div>
         <div class="list-item"><span class="num">8.</span><strong>Withdrawal After Confirmation</strong> – If the tenant confirms renewal but later withdraws or fails to proceed, Management reserves the right to charge 20% of the total Security Deposit.</div>
         <div class="list-item"><span class="num">9.</span><strong>Contract Signing Location</strong> – All lease renewals shall be signed exclusively at: Eve's Residences Office #69 Matahimik St., Riverside II, Santo Domingo, Cainta, Rizal.</div>
         <div class="list-item"><span class="num">10.</span><strong>Advance Payment and Management Discretion</strong> – If the tenant chooses to renew the lease contract, the tenant shall be required to pay an amount equivalent to twenty percent (20%) of the total contract value, based on the selected lease term and monthly rental rate. This amount shall be paid prior to contract signing and shall form part of the lease payment. The tenant shall also pay an Occupancy Support Fee of ₱298.00 per month.<div class="ml-6 mt-1">a. Management reserves the right to amend, modify, or update policies and terms at its sole discretion as necessary for operational and administrative purposes.</div></div>
@@ -555,10 +557,6 @@
       return `${yyyy}-${mm}-${dd}`;
     }
 
-    /**
-     * Normalize any date-ish value into yyyy-mm-dd (for <input type="date">).
-     * Returns '' if it can't be parsed.
-     */
     function toDateInputValue(val) {
       if (!val) return '';
       if (val instanceof Date) return isNaN(val) ? '' : formatDate(val);
@@ -574,9 +572,6 @@
       return isNaN(d) ? '' : formatDate(d);
     }
 
-    /**
-     * Derive sixthDay and folderMonth from a given yyyy-mm-dd computed20th.
-     */
     function deriveFromComputed20th(dateStr) {
       const out = { sixthDay: '_______________', folderMonth: 'Unknown Month' };
       if (!dateStr) return out;
@@ -587,6 +582,17 @@
       out.sixthDay = penalty.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       out.folderMonth = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
       return out;
+    }
+
+    function isShortTerm(term) {
+      const termString = String(term).toUpperCase().trim();
+      return (
+        termString === 'M-M' || 
+        termString === 'MM' || 
+        termString.includes('MONTHLY') || 
+        termString.includes('TRIAL') || 
+        termString === 'MONTH-MONTH'
+      );
     }
 
     function parseDate(startContract, term) {
@@ -609,18 +615,10 @@
 
       if (!isNaN(startD.getTime())) {
         const termString = String(term).toUpperCase().trim();
-        
-        const isMonthly = 
-          termString === 'M-M' || 
-          termString === 'MM' || 
-          termString.includes('MONTHLY') || 
-          termString === 'TRIAL MONTH' || 
-          termString === 'EXT. TRIAL' || 
-          termString === 'EXT. TRIAL +' ||
-          termString === 'MONTH-MONTH';
+        const shortTerm = isShortTerm(term);
 
-        if (isMonthly) {
-          termLabel = 'Monthly';
+        if (shortTerm) {
+          termLabel = termString.includes('TRIAL') ? term : 'Monthly';
           termMonths = 1;
         } else {
           termMonths = Number(term) || 12;
@@ -631,7 +629,7 @@
         actualEndD.setMonth(actualEndD.getMonth() + termMonths);
 
         let noticeDate = new Date(actualEndD);
-        if (isMonthly) {
+        if (shortTerm) {
           noticeDate.setDate(noticeDate.getDate() - 10);
         } else {
           noticeDate.setDate(noticeDate.getDate() - 20);
@@ -793,9 +791,8 @@
 
           const safeName = tenant.tenantName.replace(/'/g, "\\'");
 
-          // ---- Editable "Computed 20th Day" cell ----
           const computed20thValue = toDateInputValue(tenant.computed20th);
-          const computed20thHtml = `<input type="date" class="table-date-input" value="${computed20thValue}" onchange="updateComputed20th('${safeName}', this.value)" title="Edit Computed 20th Day">`;
+          const computed20thHtml = `<input type="date" class="table-date-input" value="${computed20thValue}" onchange="updateComputed20th('${safeName}', this.value)" title="Edit Notice Deadline">`;
 
           let actionBtn = '';
           if (tenant.status === 'Pending') {
@@ -842,8 +839,6 @@
       document.getElementById('countSent').textContent = `${sent} Sent`;
     }
 
-    // ================= CRUD: EDIT / CREATE MODAL =================
-
     window.openAddModal = function() {
       if (!activeTab) return alert("Select a tab first.");
       isAddMode = true;
@@ -877,14 +872,13 @@
       document.getElementById('editBuilding').value = tenant.building || '';
 
       document.getElementById('editStartDate').value = toDateInputValue(tenant.startDate);
-
-      // Normalize computed20th into yyyy-mm-dd for the date input
       document.getElementById('editComputed20th').value = toDateInputValue(tenant.computed20th);
 
-      // Determine term value
       let termVal = '12';
       const tl = String(tenant.termLabel || '').toLowerCase();
-      if (tl.includes('monthly')) termVal = 'M-M';
+      if (tl.includes('monthly') || tl.includes('m-m')) termVal = 'M-M';
+      else if (tl.includes('ext. trial')) termVal = 'Ext. Trial';
+      else if (tl.includes('trial')) termVal = 'Trial';
       else if (tl.includes('6')) termVal = '6';
       else if (tl.includes('2 years') || tl.includes('24')) termVal = '24';
       else if (tl.includes('1 year') || tl.includes('12')) termVal = '12';
@@ -892,7 +886,6 @@
 
       document.getElementById('editRent').value = tenant.rent || 0;
       document.getElementById('editStatus').value = tenant.status || 'Pending';
-      
       document.getElementById('editDateSent').value = toDateInputValue(tenant.dateSent);
       document.getElementById('editReason').value = tenant.reason && tenant.reason !== '—' ? tenant.reason : '';
 
@@ -918,17 +911,15 @@
       const unit = document.getElementById('editUnit').value.trim();
       const building = document.getElementById('editBuilding').value.trim();
       const startDate = document.getElementById('editStartDate').value;
-      const manualComputed20th = document.getElementById('editComputed20th').value; // may be ''
+      const manualComputed20th = document.getElementById('editComputed20th').value;
       const term = document.getElementById('editTerm').value;
       const rent = Number(document.getElementById('editRent').value) || 0;
       const status = document.getElementById('editStatus').value;
       const dateSent = document.getElementById('editDateSent').value || '';
       const reason = document.getElementById('editReason').value.trim() || '—';
 
-      // Auto-compute from startDate + term
       const autoDates = parseDate(startDate, term);
 
-      // If user provided a manual Computed 20th Day, use it (overrides auto)
       let finalComputed20th;
       let derived;
       if (manualComputed20th) {
@@ -1010,8 +1001,6 @@
       }
     };
 
-    // ================= CRUD: DELETE =================
-
     window.deleteTenant = async function(tenantName) {
       if (!activeTab) return;
       const idx = appData[activeTab].findIndex(t => t.tenantName === tenantName);
@@ -1046,8 +1035,6 @@
       }
     };
 
-    // ================= SEARCH / FILTERS =================
-
     document.getElementById('searchInput').addEventListener('input', renderSpreadsheet);
     document.getElementById('statusFilter').addEventListener('change', renderSpreadsheet);
     document.getElementById('monthFilter').addEventListener('change', renderSpreadsheet);
@@ -1061,17 +1048,12 @@
       await syncToDatabase(tenant, activeTab, 'update');
     };
 
-    /**
-     * Inline edit of Computed 20th Day from the table.
-     * Updates computed20th, recomputes sixthDay + folderMonth, and syncs.
-     */
     window.updateComputed20th = async function(tenantName, newDateStr) {
       const tenantIndex = appData[activeTab].findIndex(t => t.tenantName === tenantName);
       if (tenantIndex === -1) return;
       const tenant = appData[activeTab][tenantIndex];
 
       if (!newDateStr) {
-        // User cleared the date — restore the previous display value
         renderSpreadsheet();
         return;
       }
@@ -1085,15 +1067,25 @@
       await syncToDatabase(tenant, activeTab, 'update');
     };
 
-    // ================= PDF GENERATION =================
-
     async function generatePDFDoc(tenant) {
       const safeSetText = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.textContent = val;
       };
 
+      const shortTerm = isShortTerm(tenant.termLabel);
+      const dayCountStr = shortTerm ? '10' : '20';
+      const daySuffixStr = shortTerm ? '10th' : '20th';
+      const titleText = shortTerm ? '10‑DAY NOTICE & ADVANCE AGREEMENT FOR RENEWAL OF CONTRACT' : '20‑DAY NOTICE & ADVANCE AGREEMENT FOR RENEWAL OF CONTRACT';
+
       try {
+        const titleEl = document.getElementById('pdfTitleHeader');
+        if (titleEl) titleEl.textContent = titleText;
+
+        safeSetText('outNoticeDaysLabel', dayCountStr);
+        safeSetText('outTermDays1', daySuffixStr);
+        safeSetText('outTermDays2', daySuffixStr);
+
         safeSetText('outDate', tenant.date || '');
         safeSetText('outTenant', tenant.tenantName || '');
         safeSetText('outBuilding', tenant.building || '');
@@ -1101,8 +1093,8 @@
         
         let pdfDateStr = tenant.computed20th;
         if (pdfDateStr && pdfDateStr.includes('-')) {
-           const d = new Date(pdfDateStr);
-           if (!isNaN(d)) pdfDateStr = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+          const d = new Date(pdfDateStr);
+          if (!isNaN(d)) pdfDateStr = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         }
 
         safeSetText('outDay20', pdfDateStr || '');
@@ -1125,7 +1117,7 @@
 
       try {
         if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
-           throw new Error("Required libraries not loaded.");
+          throw new Error("Required libraries not loaded.");
         }
 
         const { jsPDF } = window.jspdf;
@@ -1189,7 +1181,7 @@
             throw new Error("Upload failed or no URL returned.");
           }
         } else {
-            doc.save(fileName);
+          doc.save(fileName);
         }
 
         tenant.status = 'Generated';
@@ -1247,7 +1239,7 @@
             throw new Error("Upload failed or no URL returned.");
           }
         } else {
-            doc.save(fileName);
+          doc.save(fileName);
         }
         
         renderSpreadsheet();
@@ -1374,7 +1366,6 @@
             }
 
             const tenantFolder = tenant.tenantName || "Unknown Tenant";
-            
             const folderPath = `${propertyName}/${monthName}/${tenantFolder}/`;
             
             zip.file(folderPath + fileName, blob);
