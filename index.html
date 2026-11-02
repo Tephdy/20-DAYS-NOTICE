@@ -197,7 +197,7 @@
             </button>
             <button id="batchDownloadZipBtn" class="ribbon-btn">
               <svg class="text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              Download ZIP
+              <span id="batchDownloadZipLabel">Download Selected ZIP (0)</span>
             </button>
           </div>
           <span class="text-[10px] text-slate-400 mt-1">Batch Actions</span>
@@ -353,6 +353,9 @@
         <table class="w-full text-left border-collapse">
           <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-bold sticky top-0 shadow-sm z-10">
             <tr>
+              <th class="px-4 py-2 border-b text-center">
+                <input type="checkbox" id="selectAllTenantsCheckbox" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" aria-label="Select all visible generated PDFs" title="Select all visible generated PDFs">
+              </th>
               <th class="px-4 py-2 border-b">Tenant Name</th>
               <th class="px-4 py-2 border-b">Unit</th>
               <th class="px-4 py-2 border-b">Notice Deadline</th>
@@ -447,6 +450,7 @@
 
     let appData = {};
     let activeTab = null;
+    const selectedTenants = new Set();
     let workbookCache = null;
     let currentEditingTenant = null;
     let isAddMode = false;
@@ -505,7 +509,7 @@
             renderTabs();
             renderSpreadsheet();
           } else {
-            document.getElementById('spreadsheetBody').innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-slate-400">No tabs found. Import a sheet to begin.</td></tr>`;
+            document.getElementById('spreadsheetBody').innerHTML = `<tr><td colspan="8" class="px-4 py-12 text-center text-slate-400">No tabs found. Import a sheet to begin.</td></tr>`;
           }
         } else {
           alert("Failed to load database: " + res.error);
@@ -680,6 +684,7 @@
         tabBtn.textContent = tabName;
         
         tabBtn.addEventListener('click', () => {
+          selectedTenants.clear();
           activeTab = tabName;
           document.getElementById('searchInput').value = ''; 
           document.getElementById('statusFilter').value = 'ALL';
@@ -728,10 +733,11 @@
       let pending = 0, generated = 0, sent = 0;
 
       if (!activeTab || !appData[activeTab] || appData[activeTab].length === 0) {
-        spreadsheetBody.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-slate-400">No data in this tab.</td></tr>`;
+        spreadsheetBody.innerHTML = `<tr><td colspan="8" class="px-4 py-12 text-center text-slate-400">No data in this tab.</td></tr>`;
         document.getElementById('countPending').textContent = `0 Pending`;
         document.getElementById('countGenerated').textContent = `0 Generated`;
         document.getElementById('countSent').textContent = `0 Sent`;
+        updateSelectionControls();
         return;
       }
 
@@ -764,7 +770,7 @@
       });
 
       if (filteredTenants.length === 0) {
-        spreadsheetBody.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-slate-400">No tenants found matching your search.</td></tr>`;
+        spreadsheetBody.innerHTML = `<tr><td colspan="8" class="px-4 py-12 text-center text-slate-400">No tenants found matching your search.</td></tr>`;
       } else {
         filteredTenants.forEach((tenant) => {
           let badgeClass = 'bg-yellow-100 text-yellow-800';
@@ -830,6 +836,22 @@
             <td class="px-4 py-3 text-right">${actionBtn}</td>
             <td class="px-4 py-3 text-center">${dateSentHtml}</td>
           `;
+          const selectionCell = document.createElement('td');
+          selectionCell.className = 'px-4 py-3 text-center';
+          const selectionCheckbox = document.createElement('input');
+          selectionCheckbox.type = 'checkbox';
+          selectionCheckbox.className = 'tenant-select-checkbox h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500';
+          selectionCheckbox.checked = selectedTenants.has(tenant);
+          selectionCheckbox.disabled = !hasPdf;
+          selectionCheckbox.setAttribute('aria-label', `Select PDF for ${tenant.tenantName}`);
+          selectionCheckbox.dataset.tenantIndex = tenants.indexOf(tenant);
+          selectionCheckbox.addEventListener('change', () => {
+            if (selectionCheckbox.checked) selectedTenants.add(tenant);
+            else selectedTenants.delete(tenant);
+            updateSelectionControls();
+          });
+          selectionCell.appendChild(selectionCheckbox);
+          tr.prepend(selectionCell);
           spreadsheetBody.appendChild(tr);
         });
       }
@@ -837,7 +859,39 @@
       document.getElementById('countPending').textContent = `${pending} Pending`;
       document.getElementById('countGenerated').textContent = `${generated} Generated`;
       document.getElementById('countSent').textContent = `${sent} Sent`;
+      updateSelectionControls();
     }
+
+    function updateSelectionControls() {
+      const selectedCount = activeTab && appData[activeTab]
+        ? appData[activeTab].filter(tenant => selectedTenants.has(tenant) && tenant.pdfUrl && String(tenant.pdfUrl).trim() !== '').length
+        : 0;
+      const downloadButton = document.getElementById('batchDownloadZipBtn');
+      document.getElementById('batchDownloadZipLabel').textContent = `Download Selected ZIP (${selectedCount})`;
+      downloadButton.disabled = selectedCount === 0;
+      downloadButton.classList.toggle('opacity-50', selectedCount === 0);
+      downloadButton.classList.toggle('cursor-not-allowed', selectedCount === 0);
+
+      const selectAllCheckbox = document.getElementById('selectAllTenantsCheckbox');
+      const visibleCheckboxes = Array.from(document.querySelectorAll('#spreadsheetBody .tenant-select-checkbox:not(:disabled)'));
+      const visibleSelectedCount = visibleCheckboxes.filter(checkbox => checkbox.checked).length;
+      selectAllCheckbox.disabled = visibleCheckboxes.length === 0;
+      selectAllCheckbox.checked = visibleCheckboxes.length > 0 && visibleSelectedCount === visibleCheckboxes.length;
+      selectAllCheckbox.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < visibleCheckboxes.length;
+    }
+
+    document.getElementById('selectAllTenantsCheckbox').addEventListener('change', event => {
+      const isSelected = event.target.checked;
+      document.querySelectorAll('#spreadsheetBody .tenant-select-checkbox:not(:disabled)').forEach(checkbox => {
+        checkbox.checked = isSelected;
+        const tenant = appData[activeTab][Number(checkbox.dataset.tenantIndex)];
+        if (tenant) {
+          if (isSelected) selectedTenants.add(tenant);
+          else selectedTenants.delete(tenant);
+        }
+      });
+      updateSelectionControls();
+    });
 
     window.openAddModal = function() {
       if (!activeTab) return alert("Select a tab first.");
@@ -1325,13 +1379,13 @@
     document.getElementById('batchDownloadZipBtn').addEventListener('click', async () => {
       if (!activeTab) return alert("No active tab selected.");
 
-      const generatedTenants = appData[activeTab].filter(t => t.pdfUrl && t.pdfUrl.trim() !== '');
+      const generatedTenants = appData[activeTab].filter(t => selectedTenants.has(t) && t.pdfUrl && String(t.pdfUrl).trim() !== '');
       
       if (generatedTenants.length === 0) {
-        return alert("There are no generated PDFs in this tab to download. Please generate them first.");
+        return alert("Select one or more tenants with generated PDFs to download.");
       }
 
-      const confirmZip = confirm(`Are you sure you want to download a ZIP file containing ${generatedTenants.length} generated PDFs?`);
+      const confirmZip = confirm(`Download ${generatedTenants.length} selected PDFs as a ZIP file?`);
       if (!confirmZip) return;
 
       document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -1341,17 +1395,15 @@
       try {
         const zip = new JSZip();
         let count = 0;
+        const failedGenerations = [];
 
         for (let i = 0; i < generatedTenants.length; i++) {
           const tenant = generatedTenants[i];
           
           try {
-            document.getElementById('loadingText').textContent = `Downloading (${i + 1}/${generatedTenants.length}): ${tenant.tenantName}...`;
-            
-            const response = await fetch(tenant.pdfUrl);
-            if (!response.ok) throw new Error("Network response was not ok");
-            
-            const blob = await response.blob();
+            document.getElementById('loadingText').textContent = `Generating PDF (${i + 1}/${generatedTenants.length}): ${tenant.tenantName}...`;
+            const doc = await generatePDFDoc(tenant);
+            const blob = doc.output('blob');
             const fileName = `Lease Renewal Notice - ${tenant.tenantName}.pdf`;
             
             const propertyName = tenant.building || "Unknown Property";
@@ -1371,11 +1423,12 @@
             zip.file(folderPath + fileName, blob);
             count++;
           } catch (err) {
-            console.warn(`Could not download PDF for ${tenant.tenantName}:`, err);
+            console.error(`Could not generate PDF for ${tenant.tenantName}:`, err);
+            failedGenerations.push(tenant.tenantName);
           }
         }
 
-        if (count === 0) throw new Error("Could not download any PDF files.");
+        if (count === 0) throw new Error("Could not generate any PDF files.");
 
         document.getElementById('loadingText').textContent = `Zipping files...`;
         const content = await zip.generateAsync({ type: "blob" });
@@ -1389,6 +1442,9 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
+        if (failedGenerations.length > 0) {
+          alert(`Added ${count} of ${generatedTenants.length} selected PDFs to the ZIP. Could not generate: ${failedGenerations.join(', ')}`);
+        }
 
       } catch (error) {
         console.error(error);
@@ -1583,6 +1639,7 @@
           await syncToDatabase(newTenant, selectedSheetName, 'save');
         }
 
+        selectedTenants.clear();
         activeTab = selectedSheetName;
         document.getElementById('searchInput').value = ''; 
         document.getElementById('statusFilter').value = 'ALL'; 
