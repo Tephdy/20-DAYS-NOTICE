@@ -46,7 +46,7 @@
     .ribbon-btn:hover { background-color: #e2e8f0; }
     .ribbon-btn svg { width: 24px; height: 24px; margin-bottom: 2px; }
     
-    input[type="date"].table-date-input {
+    .table-date-input {
       border: 1px solid transparent;
       background: transparent;
       font-size: 12px;
@@ -57,20 +57,20 @@
       outline: none;
       width: 100%;
     }
-    input[type="date"].table-date-input:hover {
+    .table-date-input:hover {
       border-color: #cbd5e1;
       background: #f8fafc;
     }
-    input[type="date"].table-date-input:focus {
+    .table-date-input:focus {
       border-color: #3b82f6;
       background: #fff;
     }
-    input[type="date"].table-date-input:disabled {
+    .table-date-input:disabled {
       background: transparent;
       color: #cbd5e1;
       cursor: not-allowed;
     }
-    input[type="date"].table-date-input:disabled:hover {
+    .table-date-input:disabled:hover {
       border-color: transparent;
       background: transparent;
     }
@@ -195,6 +195,10 @@
               <svg class="text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
               Generate All
             </button>
+            <button id="batchGenerateSelectedBtn" class="ribbon-btn" disabled>
+              <svg class="text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              <span id="batchGenerateSelectedLabel">Generate Selected (0)</span>
+            </button>
             <button id="batchDownloadZipBtn" class="ribbon-btn">
               <svg class="text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
               <span id="batchDownloadZipLabel">Download Selected ZIP (0)</span>
@@ -227,6 +231,15 @@
       </div>
 
       <div class="ribbon-content hidden flex gap-4 w-full" id="ribbon-data">
+        <div class="flex flex-col items-center border-r border-slate-200 pr-4">
+          <div class="flex gap-2">
+            <button id="syncMainSpreadsheetBtn" class="ribbon-btn" title="The source spreadsheet must be viewable by anyone with the link, and its property tab names must match this spreadsheet.">
+              <svg class="text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              Sync Main Tenants
+            </button>
+          </div>
+          <span class="text-[10px] text-slate-400 mt-1">Update matching tenants</span>
+        </div>
         <div class="flex flex-col items-center border-r border-slate-200 pr-4">
           <div class="flex gap-2">
             <button id="clearCurrentTabBtn" class="ribbon-btn">
@@ -354,11 +367,12 @@
           <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-bold sticky top-0 shadow-sm z-10">
             <tr>
               <th class="px-4 py-2 border-b text-center">
-                <input type="checkbox" id="selectAllTenantsCheckbox" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" aria-label="Select all visible generated PDFs" title="Select all visible generated PDFs">
+                <input type="checkbox" id="selectAllTenantsCheckbox" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" aria-label="Select all visible tenants" title="Select all visible tenants">
               </th>
               <th class="px-4 py-2 border-b">Tenant Name</th>
               <th class="px-4 py-2 border-b">Unit</th>
               <th class="px-4 py-2 border-b">Notice Deadline</th>
+              <th class="px-4 py-2 border-b">End of Contract</th>
               <th class="px-4 py-2 border-b">Status</th>
               <th class="px-4 py-2 border-b text-center">PDF</th>
               <th class="px-4 py-2 border-b text-right">Actions</th>
@@ -386,7 +400,7 @@
         <span>Building: <span id="outBuilding"></span></span>
         <span>Unit: <span id="outUnit"></span></span>
       </div>
-      <p class="mb-4">This serves as your official <span id="outNoticeDaysLabel">20</span>‑day notice prior to the expiration of your current Lease Contract on: <strong id="outDay20"></strong>. Please be guided by the following terms and conditions regarding contract renewal:</p>
+      <p class="mb-4">This serves as your official <span id="outNoticeDaysLabel">20</span>‑day notice prior to the expiration of your current Lease Contract on: <strong id="outEndContract"></strong>. Please be guided by the following terms and conditions regarding contract renewal:</p>
       <div class="font-bold text-[16px] uppercase mt-6 mb-3">TERMS AND CONDITIONS</div>
       <div>
         <div class="list-item"><span class="num">1.</span><strong>Contract Signing Period</strong> – The tenant must sign the renewal contract on or before the <span id="outTermDays1">20th</span> day prior to the end of the current contract period.</div>
@@ -423,7 +437,7 @@
           <td class="line-cell"></td>
         </tr>
       </table>
-      <p class="mb-6">at the rate of <strong><span id="outRent"></span></strong> per month, plus ₱298.00 monthly Occupancy Support Fee. My current contract will expire on <strong><span id="outDay20c"></span></strong>, under the terms and conditions stated in the renewal notice issued by Management.</p>
+      <p class="mb-6">at the rate of <strong><span id="outRent"></span></strong> per month, plus ₱298.00 monthly Occupancy Support Fee. My current contract will expire on <strong><span id="outEndContract2"></span></strong>, under the terms and conditions stated in the renewal notice issued by Management.</p>
       <div class="font-bold text-[16px] uppercase mt-6 mb-3">ADDITIONAL CONDITIONS</div>
       <div>
         <div class="list-item"><span class="num">1.</span>Contract signing shall be conducted exclusively at the Eve's Residences Office stated above.</div>
@@ -445,8 +459,10 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbUVSvuPANHjYm5mH3XAhHdZ76gky-DNpiqR2ncyhnNauuEWJM8uJ_JcWnIgPl50MB/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwHZNtt9R1SxUxN_0LACdbE-RYZb_6W995hTnF4kvrYNStFlAg1QjLGJu9KRZ9se3gB/exec';
     const ROOT_FOLDER_ID = '16qLfbrPeU-H_UH0QUl2lIqUoqf5_nVLQ'; 
+    const MAIN_SPREADSHEET_ID = '1eQUsnIRkXBqohI_6F-oV95bKZAn75lilbkx4KEqd4dw';
+    const MAIN_SPREADSHEET_ADDITIONAL_TABS = ['PENTHAUZ'];
 
     let appData = {};
     let activeTab = null;
@@ -481,6 +497,9 @@
 
         if (res.success) {
           appData = res.data;
+          MAIN_SPREADSHEET_ADDITIONAL_TABS.forEach(tabName => {
+            if (!Array.isArray(appData[tabName])) appData[tabName] = [];
+          });
           for (const tabName in appData) {
             if (!Array.isArray(appData[tabName])) continue;
             appData[tabName].forEach(tenant => {
@@ -488,6 +507,7 @@
               if (!tenant.status) tenant.status = 'Pending';
               if (!tenant.dateSent) tenant.dateSent = '';
               if (!tenant.reason) tenant.reason = '—';
+              if (tenant.endContract) tenant.endContract = normalizeMainSheetDate(tenant.endContract) || tenant.endContract;
               
               if (tenant.startDate && tenant.termLabel) {
                 const dates = parseDate(tenant.startDate, tenant.termLabel);
@@ -509,7 +529,7 @@
             renderTabs();
             renderSpreadsheet();
           } else {
-            document.getElementById('spreadsheetBody').innerHTML = `<tr><td colspan="8" class="px-4 py-12 text-center text-slate-400">No tabs found. Import a sheet to begin.</td></tr>`;
+            document.getElementById('spreadsheetBody').innerHTML = `<tr><td colspan="9" class="px-4 py-12 text-center text-slate-400">No tabs found. Import a sheet to begin.</td></tr>`;
           }
         } else {
           alert("Failed to load database: " + res.error);
@@ -540,7 +560,8 @@
             termLabel: tenant.termLabel,
             reason: tenant.reason,
             dateSent: tenant.dateSent || '',
-            startDate: tenant.startDate || ''
+            startDate: tenant.startDate || '',
+            endContract: tenant.endContract || ''
           })
         });
         return await res.json();
@@ -549,6 +570,370 @@
         return { success: false };
       }
     }
+
+    function normalizeSyncValue(value) {
+      return String(value == null ? '' : value).trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function normalizeSyncHeader(value) {
+      return String(value == null ? '' : value).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function normalizeSyncTerm(value) {
+      const term = normalizeSyncValue(value);
+      if (term.includes('ext') && term.includes('trial')) return 'extended trial';
+      if (term.includes('trial')) return 'trial';
+      if (term.includes('monthly') || term === 'm-m' || term === 'mm' || term === 'month-month') return 'monthly';
+      if (/\b24\b|2 years?|two years?/.test(term)) return '24';
+      if (/\b6\b|6 months?/.test(term)) return '6';
+      if (/\b12\b|1 year|one year/.test(term)) return '12';
+      return term;
+    }
+
+    function parseMainSheetValue(value, formattedValue) {
+      if (value == null || value === '') return formattedValue || '';
+      if (typeof value !== 'string') return value;
+      const dateMatch = value.match(/^Date\((\d{4}),(\d{1,2}),(\d{1,2})(?:,.*)?\)$/);
+      if (dateMatch) {
+        return formatDate(new Date(Number(dateMatch[1]), Number(dateMatch[2]), Number(dateMatch[3])));
+      }
+      return value;
+    }
+
+    function normalizeMainSheetDate(value) {
+      const dateValue = toDateInputValue(value);
+      return dateValue && !isNaN(new Date(dateValue).getTime()) ? dateValue : '';
+    }
+
+    function deriveFromContractEndDate(endDate, term) {
+      const noticeDate = new Date(endDate);
+      noticeDate.setDate(noticeDate.getDate() - (isShortTerm(term) ? 10 : 20));
+      const computed20th = formatDate(noticeDate);
+      return { computed20th, ...deriveFromComputed20th(computed20th) };
+    }
+
+    function normalizeMainSheetRent(value) {
+      if (typeof value === 'number') return value;
+      const normalized = String(value == null ? '' : value).replace(/[₱,$\s]/g, '');
+      if (!normalized) return '';
+      const amount = Number(normalized);
+      return Number.isFinite(amount) ? amount : '';
+    }
+
+    function loadMainSpreadsheetTab(tabName) {
+      return new Promise((resolve, reject) => {
+        const callbackName = `mainSheetCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const script = document.createElement('script');
+        const timeout = setTimeout(() => finish(new Error(`Timed out loading the "${tabName}" tab.`)), 20000);
+        let settled = false;
+
+        function finish(error, result) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          script.remove();
+          delete window[callbackName];
+          if (error) reject(error);
+          else resolve(result);
+        }
+
+        window[callbackName] = response => {
+          if (response.status === 'error') {
+            finish(new Error(response.errors?.[0]?.detailed_message || response.errors?.[0]?.message || `Could not read the "${tabName}" tab.`));
+            return;
+          }
+          if (!response.table || !Array.isArray(response.table.rows)) {
+            finish(new Error(`The "${tabName}" tab returned no readable data.`));
+            return;
+          }
+          finish(null, response.table.rows.map(row =>
+            (row.c || []).map(cell => parseMainSheetValue(cell && cell.v, cell && cell.f))
+          ));
+        };
+        script.onerror = () => finish(new Error(`Could not access the "${tabName}" tab. Check that the source spreadsheet is shared for viewing.`));
+
+        const endpoint = `https://docs.google.com/spreadsheets/d/${MAIN_SPREADSHEET_ID}/gviz/tq`;
+        const params = new URLSearchParams({
+          tqx: `out:json;responseHandler:${callbackName}`,
+          sheet: tabName,
+          headers: '0'
+        });
+        script.src = `${endpoint}?${params.toString()}`;
+        document.head.appendChild(script);
+      });
+    }
+
+    function extractMainTenantRows(rows) {
+      const headerAliases = {
+        tenantName: ['name', 'tenant name', 'tenant'],
+        unit: ['unit', 'unit no', 'unit number'],
+        building: ['building', 'property', 'property name'],
+        startDate: ['start of contract', 'contract start', 'lease start', 'start date', 'renewal/movein', 'renewal', 'movein', 'move in date'],
+        endDate: ['end of contract', 'contract end', 'lease end', 'expiration date'],
+        term: ['lease term', 'term', 'contract term', 'contract'],
+        rent: ['monthly rent', 'rent', 'rate', 'monthly rate'],
+        reason: ['reason']
+      };
+      const aliasSets = Object.fromEntries(
+        Object.entries(headerAliases).map(([field, aliases]) => [field, new Set(aliases.map(normalizeSyncHeader))])
+      );
+      const headerRowIndex = rows.findIndex(row => {
+        const headers = row.map(normalizeSyncHeader);
+        return headers.some(header => aliasSets.tenantName.has(header)) &&
+          headers.some(header => aliasSets.unit.has(header));
+      });
+      if (headerRowIndex === -1) {
+        throw new Error('Could not find a header row containing both Name and Unit.');
+      }
+
+      const headers = rows[headerRowIndex].map(normalizeSyncHeader);
+      const columnIndexes = {};
+      Object.entries(aliasSets).forEach(([field, aliases]) => {
+        columnIndexes[field] = headers.findIndex(header => aliases.has(header));
+      });
+      if (columnIndexes.startDate === -1 && headers.length > 8) columnIndexes.startDate = 8;
+      if (columnIndexes.rent === -1 && headers.length > 5) columnIndexes.rent = 5;
+      if (columnIndexes.endDate === -1 && headers.length > 9) {
+        columnIndexes.endDate = 9;
+      }
+      return rows.slice(headerRowIndex + 1).map(row => {
+        const record = {};
+        Object.entries(columnIndexes).forEach(([field, index]) => {
+          if (index >= 0) record[field] = row[index] == null ? '' : row[index];
+        });
+        return record;
+      }).filter(record => normalizeSyncValue(record.tenantName) && normalizeSyncValue(record.unit));
+    }
+
+    function countByKey(records, keyFunction) {
+      const counts = new Map();
+      records.forEach(record => {
+        const key = keyFunction(record);
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+      return counts;
+    }
+
+    function mainTenantIdentity(tenant) {
+      return `${normalizeSyncValue(tenant.tenantName)}\u0000${normalizeSyncValue(tenant.unit)}`;
+    }
+
+    async function syncMainSpreadsheet() {
+      const button = document.getElementById('syncMainSpreadsheetBtn');
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      const summary = { imported: 0, updated: 0, unchanged: 0, unmatched: 0, ambiguous: 0, endContractFetched: 0, endContractUpdated: 0, failedTabs: [], renameWarnings: [] };
+      button.disabled = true;
+      loadingOverlay.classList.remove('hidden');
+      loadingOverlay.classList.add('flex');
+
+      try {
+        const tabNames = Array.from(new Set([
+          ...Object.keys(appData).filter(tabName => Array.isArray(appData[tabName])),
+          ...MAIN_SPREADSHEET_ADDITIONAL_TABS
+        ]));
+        if (tabNames.length === 0) throw new Error('There are no property tabs to synchronize.');
+
+        for (let tabIndex = 0; tabIndex < tabNames.length; tabIndex++) {
+          const tabName = tabNames[tabIndex];
+          document.getElementById('loadingText').textContent = `Checking ${tabName} (${tabIndex + 1}/${tabNames.length})...`;
+          let sourceRecords;
+          try {
+            sourceRecords = extractMainTenantRows(await loadMainSpreadsheetTab(tabName));
+          } catch (error) {
+            summary.failedTabs.push(`${tabName}: ${error.message}`);
+            continue;
+          }
+
+          if (!Array.isArray(appData[tabName])) appData[tabName] = [];
+          const localRecords = appData[tabName];
+          const localByPair = new Map();
+          localRecords.forEach(tenant => {
+            const key = mainTenantIdentity(tenant);
+            if (!localByPair.has(key)) localByPair.set(key, []);
+            localByPair.get(key).push(tenant);
+          });
+          const sourcePairCounts = countByKey(sourceRecords, mainTenantIdentity);
+          const localNameCounts = countByKey(localRecords, tenant => normalizeSyncValue(tenant.tenantName));
+          const sourceNameCounts = countByKey(sourceRecords, tenant => normalizeSyncValue(tenant.tenantName));
+          const localUnitCounts = countByKey(localRecords, tenant => normalizeSyncValue(tenant.unit));
+          const sourceUnitCounts = countByKey(sourceRecords, tenant => normalizeSyncValue(tenant.unit));
+          const processedTenants = new Set();
+
+          for (const source of sourceRecords) {
+            const pairKey = mainTenantIdentity(source);
+            let target = null;
+            const exactMatches = localByPair.get(pairKey) || [];
+            if (sourcePairCounts.get(pairKey) === 1 && exactMatches.length === 1) {
+              target = exactMatches[0];
+            } else {
+              const nameKey = normalizeSyncValue(source.tenantName);
+              const nameMatches = localRecords.filter(tenant => normalizeSyncValue(tenant.tenantName) === nameKey);
+              if (sourceNameCounts.get(nameKey) === 1 && localNameCounts.get(nameKey) === 1 && nameMatches.length === 1) {
+                target = nameMatches[0];
+              } else {
+                const unitKey = normalizeSyncValue(source.unit);
+                const unitMatches = localRecords.filter(tenant => normalizeSyncValue(tenant.unit) === unitKey);
+                if (sourceUnitCounts.get(unitKey) === 1 && localUnitCounts.get(unitKey) === 1 && unitMatches.length === 1) {
+                  target = unitMatches[0];
+                }
+              }
+            }
+
+            if (!target || processedTenants.has(target)) {
+              const canImportMissingTenant = !target &&
+                MAIN_SPREADSHEET_ADDITIONAL_TABS.includes(tabName) &&
+                sourcePairCounts.get(pairKey) === 1 &&
+                exactMatches.length === 0;
+              if (canImportMissingTenant) {
+                const sourceEndDate = normalizeMainSheetDate(source.endDate);
+                const sourceStartDate = normalizeMainSheetDate(source.startDate);
+                const sourceTerm = source.term || '12';
+                const parsedTerm = parseDate('2000-01-01', sourceTerm);
+                const dates = sourceEndDate
+                  ? deriveFromContractEndDate(sourceEndDate, sourceTerm)
+                  : sourceStartDate
+                    ? parseDate(sourceStartDate, sourceTerm)
+                    : { computed20th: '', sixthDay: '_______________', folderMonth: 'Unknown Month' };
+                const importedTenant = {
+                  tenantName: String(source.tenantName).trim(),
+                  unit: String(source.unit).trim(),
+                  building: source.building || tabName,
+                  rent: normalizeMainSheetRent(source.rent) || 0,
+                  computed20th: dates.computed20th,
+                  sixthDay: dates.sixthDay,
+                  folderMonth: dates.folderMonth,
+                  termLabel: parsedTerm.termLabel || String(sourceTerm),
+                  status: 'Pending',
+                  pdfUrl: '',
+                  reason: source.reason || '—',
+                  dateSent: '',
+                  startDate: sourceStartDate,
+                  endContract: sourceEndDate
+                };
+                const saveResult = await syncToDatabase(importedTenant, tabName, 'save');
+                if (!saveResult || !saveResult.success) {
+                  throw new Error(`Could not import "${importedTenant.tenantName}" into "${tabName}".`);
+                }
+                localRecords.push(importedTenant);
+                processedTenants.add(importedTenant);
+                summary.imported++;
+                if (sourceEndDate) {
+                  summary.endContractFetched++;
+                  summary.endContractUpdated++;
+                }
+                continue;
+              }
+              if (target || exactMatches.length > 1 || sourcePairCounts.get(pairKey) > 1) summary.ambiguous++;
+              else summary.unmatched++;
+              continue;
+            }
+            processedTenants.add(target);
+
+            const updated = { ...target };
+            const setIfPresent = (field, value) => {
+              if (value !== '' && value != null) updated[field] = value;
+            };
+            setIfPresent('tenantName', source.tenantName);
+            setIfPresent('unit', source.unit);
+            setIfPresent('building', source.building);
+            setIfPresent('rent', normalizeMainSheetRent(source.rent));
+            setIfPresent('reason', source.reason);
+
+            const sourceStartDate = normalizeMainSheetDate(source.startDate);
+            const sourceEndDate = normalizeMainSheetDate(source.endDate);
+            if (sourceEndDate) {
+              summary.endContractFetched++;
+              if (sourceEndDate !== normalizeMainSheetDate(target.endContract)) {
+                summary.endContractUpdated++;
+              }
+            }
+            const startDate = sourceStartDate || target.startDate;
+            const term = source.term || target.termLabel;
+            const startDateChanged = sourceStartDate && sourceStartDate !== normalizeMainSheetDate(target.startDate);
+            const termChanged = source.term && normalizeSyncTerm(source.term) !== normalizeSyncTerm(target.termLabel);
+            if (sourceStartDate) updated.startDate = sourceStartDate;
+            if (sourceEndDate) updated.endContract = sourceEndDate;
+            if (startDate && term && (startDateChanged || termChanged)) {
+              const dates = parseDate(startDate, term);
+              if (dates.computed20th && dates.computed20th !== 'No Date') {
+                updated.computed20th = dates.computed20th;
+                updated.sixthDay = dates.sixthDay;
+                updated.folderMonth = dates.folderMonth;
+                updated.termLabel = dates.termLabel;
+              }
+            }
+            if (sourceEndDate) {
+              const endDateDerived = deriveFromContractEndDate(sourceEndDate, term);
+              updated.computed20th = endDateDerived.computed20th;
+              updated.sixthDay = endDateDerived.sixthDay;
+              updated.folderMonth = endDateDerived.folderMonth;
+            }
+
+            const changed = ['tenantName', 'unit', 'building', 'rent', 'reason', 'startDate', 'endContract', 'termLabel', 'computed20th']
+              .some(field => normalizeSyncValue(updated[field]) !== normalizeSyncValue(target[field]));
+            if (!changed) {
+              summary.unchanged++;
+              continue;
+            }
+
+            document.getElementById('loadingText').textContent = `Updating ${target.tenantName} (${tabName})...`;
+            if (updated.tenantName !== target.tenantName) {
+              const saveResult = await syncToDatabase(updated, tabName, 'save');
+              if (!saveResult || !saveResult.success) {
+                throw new Error(`The renamed tenant "${updated.tenantName}" could not be saved in "${tabName}".`);
+              }
+              try {
+                const deleteResponse = await fetch(APPS_SCRIPT_URL, {
+                  method: 'POST',
+                  body: JSON.stringify({ action: 'delete', tabName, tenantName: target.tenantName })
+                });
+                const deleteResult = await deleteResponse.json();
+                if (!deleteResponse.ok || !deleteResult.success) {
+                  const reason = deleteResult.error || deleteResult.message || `HTTP ${deleteResponse.status}`;
+                  summary.renameWarnings.push(`${tabName}: saved "${updated.tenantName}", but could not remove old entry "${target.tenantName}" (${reason}).`);
+                }
+              } catch (error) {
+                console.error(error);
+                summary.renameWarnings.push(`${tabName}: saved "${updated.tenantName}", but could not confirm removal of old entry "${target.tenantName}" (${error.message}).`);
+              }
+            } else {
+              const updateResult = await syncToDatabase(updated, tabName, 'update');
+              if (!updateResult || !updateResult.success) {
+                throw new Error(`Could not update "${target.tenantName}" in "${tabName}".`);
+              }
+            }
+            Object.assign(target, updated);
+            summary.updated++;
+          }
+        }
+
+        renderTabs();
+        renderSpreadsheet();
+        const details = [
+          `Imported new tenants: ${summary.imported}`,
+          `Updated: ${summary.updated}`,
+          `End of Contract dates fetched: ${summary.endContractFetched}`,
+          `End of Contract dates updated: ${summary.endContractUpdated}`,
+          `Already current: ${summary.unchanged}`,
+          `No match: ${summary.unmatched}`,
+          `Ambiguous matches skipped: ${summary.ambiguous}`
+        ];
+        if (summary.failedTabs.length) details.push(`Tabs not synchronized:\n${summary.failedTabs.join('\n')}`);
+        if (summary.renameWarnings.length) details.push(`Rename cleanup warnings:\n${summary.renameWarnings.join('\n')}`);
+        alert(`Main spreadsheet sync complete.\n\n${details.join('\n')}`);
+      } catch (error) {
+        console.error(error);
+        renderTabs();
+        renderSpreadsheet();
+        alert(`Main spreadsheet sync stopped: ${error.message}`);
+      } finally {
+        button.disabled = false;
+        loadingOverlay.classList.add('hidden');
+        loadingOverlay.classList.remove('flex');
+      }
+    }
+
+    document.getElementById('syncMainSpreadsheetBtn').addEventListener('click', syncMainSpreadsheet);
 
     function formatPeso(amount) {
       return '₱' + (Number(amount) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -561,6 +946,13 @@
       return `${yyyy}-${mm}-${dd}`;
     }
 
+    function formatDisplayDate(value) {
+      const isoDate = toDateInputValue(value);
+      if (!isoDate) return '';
+      const [year, month, day] = isoDate.split('-');
+      return `${Number(month)}/${Number(day)}/${year}`;
+    }
+
     function toDateInputValue(val) {
       if (!val) return '';
       if (val instanceof Date) return isNaN(val) ? '' : formatDate(val);
@@ -570,8 +962,28 @@
       }
       const s = String(val).trim();
       if (!s) return '';
-      if (s.includes('T')) return s.split('T')[0];
-      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      if (s.includes('T')) return toDateInputValue(s.split('T')[0]);
+      const isoDateMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoDateMatch) {
+        const year = Number(isoDateMatch[1]);
+        const month = Number(isoDateMatch[2]);
+        const day = Number(isoDateMatch[3]);
+        const date = new Date(year, month - 1, day);
+        return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
+          ? formatDate(date)
+          : '';
+      }
+      const usDateMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (usDateMatch) {
+        const month = Number(usDateMatch[1]);
+        const day = Number(usDateMatch[2]);
+        const year = Number(usDateMatch[3]);
+        const date = new Date(year, month - 1, day);
+        if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+          return formatDate(date);
+        }
+        return '';
+      }
       const d = new Date(s);
       return isNaN(d) ? '' : formatDate(d);
     }
@@ -733,7 +1145,7 @@
       let pending = 0, generated = 0, sent = 0;
 
       if (!activeTab || !appData[activeTab] || appData[activeTab].length === 0) {
-        spreadsheetBody.innerHTML = `<tr><td colspan="8" class="px-4 py-12 text-center text-slate-400">No data in this tab.</td></tr>`;
+        spreadsheetBody.innerHTML = `<tr><td colspan="9" class="px-4 py-12 text-center text-slate-400">No data in this tab.</td></tr>`;
         document.getElementById('countPending').textContent = `0 Pending`;
         document.getElementById('countGenerated').textContent = `0 Generated`;
         document.getElementById('countSent').textContent = `0 Sent`;
@@ -770,7 +1182,7 @@
       });
 
       if (filteredTenants.length === 0) {
-        spreadsheetBody.innerHTML = `<tr><td colspan="8" class="px-4 py-12 text-center text-slate-400">No tenants found matching your search.</td></tr>`;
+        spreadsheetBody.innerHTML = `<tr><td colspan="9" class="px-4 py-12 text-center text-slate-400">No tenants found matching your search.</td></tr>`;
       } else {
         filteredTenants.forEach((tenant) => {
           let badgeClass = 'bg-yellow-100 text-yellow-800';
@@ -784,21 +1196,13 @@
           const disabledAttr = isDisabled ? 'disabled' : '';
           
           let dateSentHtml = '';
-          if (tenant.dateSent && tenant.dateSent !== '') {
-            try {
-              const cleanDateStr = tenant.dateSent.split('T')[0];
-              dateSentHtml = `<input type="date" class="table-date-input" value="${cleanDateStr}" ${disabledAttr} onchange="updateDateSent('${tenant.tenantName.replace(/'/g, "\\'")}', this.value)">`;
-            } catch(e) {
-              dateSentHtml = `<input type="date" class="table-date-input" ${disabledAttr} onchange="updateDateSent('${tenant.tenantName.replace(/'/g, "\\'")}', this.value)">`;
-            }
-          } else {
-            dateSentHtml = `<input type="date" class="table-date-input" ${disabledAttr} onchange="updateDateSent('${tenant.tenantName.replace(/'/g, "\\'")}', this.value)">`;
-          }
+          dateSentHtml = `<input type="text" inputmode="numeric" placeholder="M/D/YYYY" class="table-date-input" value="${formatDisplayDate(tenant.dateSent)}" ${disabledAttr} onchange="updateDateSent('${tenant.tenantName.replace(/'/g, "\\'")}', this.value)" aria-label="Date sent (M/D/YYYY)">`;
 
           const safeName = tenant.tenantName.replace(/'/g, "\\'");
 
-          const computed20thValue = toDateInputValue(tenant.computed20th);
-          const computed20thHtml = `<input type="date" class="table-date-input" value="${computed20thValue}" onchange="updateComputed20th('${safeName}', this.value)" title="Edit Notice Deadline">`;
+          const computed20thValue = formatDisplayDate(tenant.computed20th);
+          const computed20thHtml = `<input type="text" inputmode="numeric" placeholder="M/D/YYYY" class="table-date-input" value="${computed20thValue}" onchange="updateComputed20th('${safeName}', this.value)" title="Edit Notice Deadline (M/D/YYYY)" aria-label="Notice deadline (M/D/YYYY)">`;
+          const endContractDisplay = formatDisplayDate(tenant.endContract) || '—';
 
           let actionBtn = '';
           if (tenant.status === 'Pending') {
@@ -831,6 +1235,7 @@
             <td class="px-4 py-3 font-medium text-slate-800">${tenant.tenantName}</td>
             <td class="px-4 py-3 text-slate-600">${tenant.unit}</td>
             <td class="px-4 py-2 text-slate-600 font-medium">${computed20thHtml}</td>
+            <td class="px-4 py-3 text-slate-600">${endContractDisplay}</td>
             <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] uppercase tracking-wide rounded-full font-bold ${badgeClass}">${tenant.status}</span></td>
             <td class="px-4 py-3 text-center">${pdfCell}</td>
             <td class="px-4 py-3 text-right">${actionBtn}</td>
@@ -842,9 +1247,8 @@
           selectionCheckbox.type = 'checkbox';
           selectionCheckbox.className = 'tenant-select-checkbox h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500';
           selectionCheckbox.checked = selectedTenants.has(tenant);
-          selectionCheckbox.disabled = !hasPdf;
-          selectionCheckbox.setAttribute('aria-label', `Select PDF for ${tenant.tenantName}`);
-          selectionCheckbox.dataset.tenantIndex = tenants.indexOf(tenant);
+          selectionCheckbox.setAttribute('aria-label', `Select ${tenant.tenantName}`);
+          selectionCheckbox.tenantRecord = tenant;
           selectionCheckbox.addEventListener('change', () => {
             if (selectionCheckbox.checked) selectedTenants.add(tenant);
             else selectedTenants.delete(tenant);
@@ -866,6 +1270,15 @@
       const selectedCount = activeTab && appData[activeTab]
         ? appData[activeTab].filter(tenant => selectedTenants.has(tenant) && tenant.pdfUrl && String(tenant.pdfUrl).trim() !== '').length
         : 0;
+      const selectedPendingCount = activeTab && appData[activeTab]
+        ? appData[activeTab].filter(tenant => selectedTenants.has(tenant) && tenant.status === 'Pending').length
+        : 0;
+      const generateSelectedButton = document.getElementById('batchGenerateSelectedBtn');
+      document.getElementById('batchGenerateSelectedLabel').textContent = `Generate Selected (${selectedPendingCount})`;
+      generateSelectedButton.disabled = selectedPendingCount === 0;
+      generateSelectedButton.classList.toggle('opacity-50', selectedPendingCount === 0);
+      generateSelectedButton.classList.toggle('cursor-not-allowed', selectedPendingCount === 0);
+
       const downloadButton = document.getElementById('batchDownloadZipBtn');
       document.getElementById('batchDownloadZipLabel').textContent = `Download Selected ZIP (${selectedCount})`;
       downloadButton.disabled = selectedCount === 0;
@@ -873,7 +1286,7 @@
       downloadButton.classList.toggle('cursor-not-allowed', selectedCount === 0);
 
       const selectAllCheckbox = document.getElementById('selectAllTenantsCheckbox');
-      const visibleCheckboxes = Array.from(document.querySelectorAll('#spreadsheetBody .tenant-select-checkbox:not(:disabled)'));
+      const visibleCheckboxes = Array.from(document.querySelectorAll('#spreadsheetBody .tenant-select-checkbox'));
       const visibleSelectedCount = visibleCheckboxes.filter(checkbox => checkbox.checked).length;
       selectAllCheckbox.disabled = visibleCheckboxes.length === 0;
       selectAllCheckbox.checked = visibleCheckboxes.length > 0 && visibleSelectedCount === visibleCheckboxes.length;
@@ -882,9 +1295,9 @@
 
     document.getElementById('selectAllTenantsCheckbox').addEventListener('change', event => {
       const isSelected = event.target.checked;
-      document.querySelectorAll('#spreadsheetBody .tenant-select-checkbox:not(:disabled)').forEach(checkbox => {
+      document.querySelectorAll('#spreadsheetBody .tenant-select-checkbox').forEach(checkbox => {
         checkbox.checked = isSelected;
-        const tenant = appData[activeTab][Number(checkbox.dataset.tenantIndex)];
+        const tenant = checkbox.tenantRecord;
         if (tenant) {
           if (isSelected) selectedTenants.add(tenant);
           else selectedTenants.delete(tenant);
@@ -1098,7 +1511,14 @@
       if (tenantIndex === -1) return;
       const tenant = appData[activeTab][tenantIndex];
 
-      tenant.dateSent = newDateStr;
+      const normalizedDate = newDateStr.trim() ? toDateInputValue(newDateStr) : '';
+      if (newDateStr.trim() && !normalizedDate) {
+        alert("Enter the date as M/D/YYYY, for example 7/22/2026.");
+        renderSpreadsheet();
+        return;
+      }
+      tenant.dateSent = normalizedDate;
+      renderSpreadsheet();
       await syncToDatabase(tenant, activeTab, 'update');
     };
 
@@ -1107,13 +1527,19 @@
       if (tenantIndex === -1) return;
       const tenant = appData[activeTab][tenantIndex];
 
-      if (!newDateStr) {
+      const normalizedDate = newDateStr.trim() ? toDateInputValue(newDateStr) : '';
+      if (newDateStr.trim() && !normalizedDate) {
+        alert("Enter the date as M/D/YYYY, for example 7/22/2026.");
+        renderSpreadsheet();
+        return;
+      }
+      if (!normalizedDate) {
         renderSpreadsheet();
         return;
       }
 
-      const derived = deriveFromComputed20th(newDateStr);
-      tenant.computed20th = newDateStr;
+      const derived = deriveFromComputed20th(normalizedDate);
+      tenant.computed20th = normalizedDate;
       tenant.sixthDay = derived.sixthDay;
       tenant.folderMonth = derived.folderMonth;
 
@@ -1140,21 +1566,18 @@
         safeSetText('outTermDays1', daySuffixStr);
         safeSetText('outTermDays2', daySuffixStr);
 
-        safeSetText('outDate', tenant.date || '');
+        safeSetText('outDate', formatDisplayDate(tenant.date) || tenant.date || '');
         safeSetText('outTenant', tenant.tenantName || '');
         safeSetText('outBuilding', tenant.building || '');
         safeSetText('outUnit', tenant.unit || '');
         
-        let pdfDateStr = tenant.computed20th;
-        if (pdfDateStr && pdfDateStr.includes('-')) {
-          const d = new Date(pdfDateStr);
-          if (!isNaN(d)) pdfDateStr = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        }
+        const pdfDateStr = formatDisplayDate(tenant.computed20th) || tenant.computed20th;
+        const contractEndDateStr = formatDisplayDate(tenant.endContract) || tenant.endContract || '';
 
-        safeSetText('outDay20', pdfDateStr || '');
+        safeSetText('outEndContract', contractEndDateStr);
         safeSetText('outDay20b', pdfDateStr || '');
-        safeSetText('outDay20c', pdfDateStr || '');
-        safeSetText('outSixthDay', tenant.sixthDay || '');
+        safeSetText('outEndContract2', contractEndDateStr);
+        safeSetText('outSixthDay', formatDisplayDate(tenant.sixthDay) || tenant.sixthDay || '');
         safeSetText('outCheckYes', (tenant.choice && tenant.choice.toUpperCase() === 'YES') ? '[ X ]' : '[   ]');
         safeSetText('outCheckNo', (tenant.choice && tenant.choice.toUpperCase() === 'NO') ? '[ X ]' : '[   ]');
         safeSetText('outReason', tenant.reason || '—');
@@ -1307,18 +1730,17 @@
       }
     };
 
-    document.getElementById('batchGenerateBtn').addEventListener('click', async () => {
+    async function batchGenerateTenants(pendingTenants, selectionLabel) {
       if (!activeTab) return alert("No active tab selected.");
-      
-      const pendingTenants = appData[activeTab].filter(t => t.status === 'Pending');
-      
       if (pendingTenants.length === 0) {
-        return alert("There are no Pending tenants in this tab to generate.");
+        return alert(selectionLabel === 'selected'
+          ? "There are no selected Pending tenants to generate."
+          : "There are no Pending tenants in this tab to generate.");
       }
 
-      const confirmGenerate = confirm(`Are you sure you want to generate PDFs for all ${pendingTenants.length} Pending tenants in "${activeTab}"?`);
+      const scopeText = selectionLabel === 'selected' ? 'selected Pending' : 'Pending';
+      const confirmGenerate = confirm(`Are you sure you want to generate PDFs for ${selectionLabel === 'selected' ? '' : 'all '}${pendingTenants.length} ${scopeText} tenants in "${activeTab}"?`);
       if (!confirmGenerate) return;
-
       document.getElementById('loadingOverlay').classList.remove('hidden');
       document.getElementById('loadingOverlay').classList.add('flex');
 
@@ -1366,7 +1788,7 @@
           await syncToDatabase(tenant, activeTab, 'update');
         }
         
-        alert(`Successfully generated and uploaded ${pendingTenants.length} notices.`);
+        alert(`Successfully generated and uploaded ${pendingTenants.length} ${selectionLabel === 'selected' ? 'selected ' : ''}notices.`);
       } catch (error) {
         console.error(error);
         alert("An error occurred during batch generation: " + error.message);
@@ -1374,6 +1796,18 @@
         document.getElementById('loadingOverlay').classList.add('hidden');
         document.getElementById('loadingOverlay').classList.remove('flex');
       }
+    }
+
+    document.getElementById('batchGenerateBtn').addEventListener('click', () => {
+      if (!activeTab) return alert("No active tab selected.");
+      const pendingTenants = appData[activeTab].filter(tenant => tenant.status === 'Pending');
+      batchGenerateTenants(pendingTenants, 'all');
+    });
+
+    document.getElementById('batchGenerateSelectedBtn').addEventListener('click', () => {
+      if (!activeTab) return alert("No active tab selected.");
+      const pendingTenants = appData[activeTab].filter(tenant => selectedTenants.has(tenant) && tenant.status === 'Pending');
+      batchGenerateTenants(pendingTenants, 'selected');
     });
 
     document.getElementById('batchDownloadZipBtn').addEventListener('click', async () => {
