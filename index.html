@@ -303,6 +303,10 @@
           <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Start of Contract</label>
           <input type="date" id="inputStartDate" class="w-full px-3 py-2 border rounded text-sm">
         </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">End of Contract</label>
+          <input type="date" id="inputEndContract" class="w-full px-3 py-2 border rounded text-sm">
+        </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Term</label>
@@ -400,7 +404,7 @@
         <span>Building: <span id="outBuilding"></span></span>
         <span>Unit: <span id="outUnit"></span></span>
       </div>
-      <p class="mb-4">This serves as your official <span id="outNoticeDaysLabel">20</span>‑day notice prior to the expiration of your current Lease Contract on: <strong id="outEndContract"></strong>. Please be guided by the following terms and conditions regarding contract renewal:</p>
+      <p class="mb-4">This serves as your official <span id="outNoticeDaysLabel">20</span>‑day notice. Notice Deadline (the <span id="outTermDays1">20th</span> day): <strong id="outNoticeDeadline"></strong>. End of Contract Date: <strong id="outEndContract"></strong>. Please be guided by the following terms and conditions regarding contract renewal:</p>
       <div class="font-bold text-[16px] uppercase mt-6 mb-3">TERMS AND CONDITIONS</div>
       <div>
         <div class="list-item"><span class="num">1.</span><strong>Contract Signing Period</strong> – The tenant must sign the renewal contract on or before the <span id="outTermDays1">20th</span> day prior to the end of the current contract period.</div>
@@ -459,7 +463,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwHZNtt9R1SxUxN_0LACdbE-RYZb_6W995hTnF4kvrYNStFlAg1QjLGJu9KRZ9se3gB/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvTv-hCnZoKT87dtu7nNq5E65qWhLCOp_NHrP_-uRNavNU9quBJyq7cRPUPacwTX6n/exec';
     const ROOT_FOLDER_ID = '16qLfbrPeU-H_UH0QUl2lIqUoqf5_nVLQ'; 
     const MAIN_SPREADSHEET_ID = '1eQUsnIRkXBqohI_6F-oV95bKZAn75lilbkx4KEqd4dw';
     const MAIN_SPREADSHEET_ADDITIONAL_TABS = ['PENTHAUZ'];
@@ -1574,6 +1578,7 @@
         const pdfDateStr = formatDisplayDate(tenant.computed20th) || tenant.computed20th;
         const contractEndDateStr = formatDisplayDate(tenant.endContract) || tenant.endContract || '';
 
+        safeSetText('outNoticeDeadline', pdfDateStr || '');
         safeSetText('outEndContract', contractEndDateStr);
         safeSetText('outDay20b', pdfDateStr || '');
         safeSetText('outEndContract2', contractEndDateStr);
@@ -1938,6 +1943,7 @@
       if (!activeTab) return alert("Select a tab first.");
 
       const startContract = document.getElementById('inputStartDate').value;
+      const endContract = document.getElementById('inputEndContract').value;
       const term = document.getElementById('inputTerm').value;
       const dates = parseDate(startContract, term);
 
@@ -1952,12 +1958,14 @@
         pdfUrl: '',
         reason: '—',
         dateSent: '',
-        startDate: startContract 
+        startDate: startContract,
+        endContract
       };
 
       appData[activeTab].push(newTenant);
       renderSpreadsheet();
       document.getElementById('inputTenant').value = '';
+      document.getElementById('inputEndContract').value = '';
 
       await syncToDatabase(newTenant, activeTab, 'save');
     });

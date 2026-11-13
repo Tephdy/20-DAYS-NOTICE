@@ -90,6 +90,25 @@ function headerIndex(headers, headerName) {
   return headers.findIndex(header => String(header || '').trim().toLowerCase() === expected);
 }
 
+function normalizeEndContract(value) {
+  if (value === undefined || value === null || value === '') return '';
+
+  const dateText = String(value).trim();
+  const isoMatch = dateText.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const year = Number(isoMatch[1]);
+    const month = Number(isoMatch[2]);
+    const day = Number(isoMatch[3]);
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+      return dateText;
+    }
+    throw new Error("End of Contract must be a valid calendar date.");
+  }
+
+  return dateText;
+}
+
 function ensureEndContractColumn(sheet, headers) {
   if (headerIndex(headers, "End of Contract") !== -1) return headers;
 
@@ -199,7 +218,7 @@ function handleCRUD(data) {
       "Term": data.termLabel || '',
       "Reason": data.reason || '',
       "Start Date": data.startDate || '',
-      "End of Contract": data.endContract || ''
+      "End of Contract": normalizeEndContract(data.endContract)
     };
     sheet.appendRow(headers.map(header => {
       const key = Object.keys(tenant).find(name => name.toLowerCase() === String(header || '').trim().toLowerCase());
@@ -227,7 +246,7 @@ function handleCRUD(data) {
           setIfPresent("Term", data.termLabel);
           setIfPresent("Reason", data.reason);
           setIfPresent("Start Date", data.startDate);
-          setIfPresent("End of Contract", data.endContract);
+          setIfPresent("End of Contract", normalizeEndContract(data.endContract));
 
           if (data.pdfUrl !== undefined) {
             const pdfColumn = headerIndex(headers, "PDF Link") + 1;
