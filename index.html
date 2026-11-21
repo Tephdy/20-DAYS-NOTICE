@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notice Management System</title>
   <link rel="icon" type="image/png" href="img/logo.ico">
+  <link rel="stylesheet" href="style.css">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -12,69 +13,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
-  <style>
-    body { background-color: #f1f5f9; height: 100vh; overflow: hidden; }
-    .pdf-page { width: 210mm; height: 297mm; background: #ffffff; margin: 0 auto; padding: 20mm 20mm; box-sizing: border-box; font-family: 'Times New Roman', Times, serif; font-size: 15px; line-height: 1.35; color: #000000; overflow: hidden; }
-    #page-1 { line-height: 1.1; }
-    #page-1 > div:first-child { margin-bottom: 12px; }
-    #page-1 > div:nth-child(2) { margin-bottom: 12px; }
-    #page-1 > div:nth-child(3) { margin-bottom: 4px; }
-    #page-1 > div:nth-child(4), #page-1 > p { margin-bottom: 8px; }
-    #page-1 > div:nth-child(6) { margin-top: 12px; margin-bottom: 6px; }
-    #page-1 .list-item { margin-bottom: 2px; }
-    #page-1 > div:nth-child(8) { margin-top: 12px; margin-bottom: 4px; }
-    #page-1 > div:nth-child(10) { margin-top: 6px; }
-    #page-1 > div:nth-child(11) { margin-top: 8px; }
-    #page-1 > div:nth-child(12) { margin-top: 24px; }
-    .pdf-page p, .pdf-page div, .pdf-page span { text-align: left !important; letter-spacing: normal !important; word-spacing: normal !important; }
-    .list-item { list-style: none; margin-bottom: 4px; padding-left: 1.5em; text-indent: -1.5em; }
-    .list-item .num { font-weight: bold; display: inline-block; width: 1.5em; text-indent: 0; }
-    .form-table { width: 100%; max-width: 450px; margin: 15px 0 25px 0; border-collapse: collapse; }
-    .form-table td { padding: 6px 10px; vertical-align: bottom; }
-    .line-cell { border-bottom: 1.5px solid black; width: 180px; }
-    .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid #ffffff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .tab-scroll::-webkit-scrollbar { height: 6px; }
-    .tab-scroll::-webkit-scrollbar-track { background: transparent; }
-    .tab-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .tab-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    .dragging { opacity: 0.5; cursor: grabbing !important; }
-    .office-tab { padding: 8px 16px; font-size: 14px; color: #333; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
-    .office-tab:hover { background-color: #e2e8f0; }
-    .office-tab.active { color: #217346; border-bottom-color: #217346; font-weight: 600; }
-    .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #333; transition: background 0.2s; cursor: pointer; }
-    .ribbon-btn:hover { background-color: #e2e8f0; }
-    .ribbon-btn svg { width: 24px; height: 24px; margin-bottom: 2px; }
-    
-    .table-date-input {
-      border: 1px solid transparent;
-      background: transparent;
-      font-size: 12px;
-      color: #475569;
-      padding: 4px;
-      border-radius: 4px;
-      cursor: pointer;
-      outline: none;
-      width: 100%;
-    }
-    .table-date-input:hover {
-      border-color: #cbd5e1;
-      background: #f8fafc;
-    }
-    .table-date-input:focus {
-      border-color: #3b82f6;
-      background: #fff;
-    }
-    .table-date-input:disabled {
-      background: transparent;
-      color: #cbd5e1;
-      cursor: not-allowed;
-    }
-    .table-date-input:disabled:hover {
-      border-color: transparent;
-      background: transparent;
-    }
-  </style>
 </head>
 <body class="p-2 md:p-4 flex flex-col w-full h-screen">
 
@@ -113,6 +51,10 @@
         <div>
           <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Start of Contract</label>
           <input type="date" id="editStartDate" class="w-full px-3 py-2 border rounded text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">End of Contract</label>
+          <input type="date" id="editEndContract" class="w-full px-3 py-2 border rounded text-sm">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Computed Notice Deadline <span class="text-slate-400 normal-case font-normal">(leave blank to auto-compute)</span></label>
@@ -441,7 +383,7 @@
           <td class="line-cell"></td>
         </tr>
       </table>
-      <p class="mb-6">at the rate of <strong><span id="outRent"></span></strong> per month, plus ₱298.00 monthly Occupancy Support Fee. My current contract will expire on <strong><span id="outEndContract2"></span></strong>, under the terms and conditions stated in the renewal notice issued by Management.</p>
+      <p class="mb-6">at the rate of <strong><span id="outRent"></span></strong> per month. My current contract will expire on <strong><span id="outEndContract2"></span></strong>, under the terms and conditions stated in the renewal notice issued by Management.</p>
       <div class="font-bold text-[16px] uppercase mt-6 mb-3">ADDITIONAL CONDITIONS</div>
       <div>
         <div class="list-item"><span class="num">1.</span>Contract signing shall be conducted exclusively at the Eve's Residences Office stated above.</div>
@@ -673,7 +615,7 @@
         unit: ['unit', 'unit no', 'unit number'],
         building: ['building', 'property', 'property name'],
         startDate: ['start of contract', 'contract start', 'lease start', 'start date', 'renewal/movein', 'renewal', 'movein', 'move in date'],
-        endDate: ['end of contract', 'contract end', 'lease end', 'expiration date'],
+        endDate: ['end of contract', 'end contract', 'end contract date', 'contract end', 'contract end date', 'lease end', 'lease end date', 'end date', 'expiration date', 'contract expiration', 'lease expiration', 'expiry date', 'contract expiry', 'contract expiration date'],
         term: ['lease term', 'term', 'contract term', 'contract'],
         rent: ['monthly rent', 'rent', 'rate', 'monthly rate'],
         reason: ['reason']
@@ -697,6 +639,11 @@
       });
       if (columnIndexes.startDate === -1 && headers.length > 8) columnIndexes.startDate = 8;
       if (columnIndexes.rent === -1 && headers.length > 5) columnIndexes.rent = 5;
+      if (columnIndexes.endDate === -1) {
+        columnIndexes.endDate = headers.findIndex(header =>
+          header.includes('contract') && (header.includes('end') || header.includes('expir') || header.includes('expiry'))
+        );
+      }
       if (columnIndexes.endDate === -1 && headers.length > 9) {
         columnIndexes.endDate = 9;
       }
@@ -1319,6 +1266,7 @@
       document.getElementById('editUnit').value = '';
       document.getElementById('editBuilding').value = "Eve's Residences";
       document.getElementById('editStartDate').value = '';
+      document.getElementById('editEndContract').value = '';
       document.getElementById('editComputed20th').value = '';
       document.getElementById('editTerm').value = '12';
       document.getElementById('editRent').value = '6000';
@@ -1343,6 +1291,7 @@
       document.getElementById('editBuilding').value = tenant.building || '';
 
       document.getElementById('editStartDate').value = toDateInputValue(tenant.startDate);
+      document.getElementById('editEndContract').value = toDateInputValue(tenant.endContract);
       document.getElementById('editComputed20th').value = toDateInputValue(tenant.computed20th);
 
       let termVal = '12';
@@ -1382,6 +1331,7 @@
       const unit = document.getElementById('editUnit').value.trim();
       const building = document.getElementById('editBuilding').value.trim();
       const startDate = document.getElementById('editStartDate').value;
+      const endContract = document.getElementById('editEndContract').value;
       const manualComputed20th = document.getElementById('editComputed20th').value;
       const term = document.getElementById('editTerm').value;
       const rent = Number(document.getElementById('editRent').value) || 0;
@@ -1421,7 +1371,8 @@
             pdfUrl: '',
             reason,
             dateSent,
-            startDate
+            startDate,
+            endContract
           };
           appData[activeTab].push(newTenant);
           await syncToDatabase(newTenant, activeTab, 'save');
@@ -1444,7 +1395,8 @@
             status,
             reason,
             dateSent,
-            startDate
+            startDate,
+            endContract
           };
 
           const idx = appData[activeTab].findIndex(t => t.tenantName === originalName);

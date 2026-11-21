@@ -1,0 +1,61 @@
+ body { background-color: #f1f5f9; height: 100vh; overflow: hidden; }
+    .pdf-page { width: 210mm; height: 297mm; background: #ffffff; margin: 0 auto; padding: 20mm 20mm; box-sizing: border-box; font-family: 'Times New Roman', Times, serif; font-size: 15px; line-height: 1.35; color: #000000; overflow: hidden; }
+    #page-1 { line-height: 1.1; }
+    #page-1 > div:first-child { margin-bottom: 12px; }
+    #page-1 > div:nth-child(2) { margin-bottom: 12px; }
+    #page-1 > div:nth-child(3) { margin-bottom: 4px; }
+    #page-1 > div:nth-child(4), #page-1 > p { margin-bottom: 8px; }
+    #page-1 > div:nth-child(6) { margin-top: 12px; margin-bottom: 6px; }
+    #page-1 .list-item { margin-bottom: 2px; }
+    #page-1 > div:nth-child(8) { margin-top: 12px; margin-bottom: 4px; }
+    #page-1 > div:nth-child(10) { margin-top: 6px; }
+    #page-1 > div:nth-child(11) { margin-top: 8px; }
+    #page-1 > div:nth-child(12) { margin-top: 24px; }
+    .pdf-page p, .pdf-page div, .pdf-page span { text-align: left !important; letter-spacing: normal !important; word-spacing: normal !important; }
+    .list-item { list-style: none; margin-bottom: 4px; padding-left: 1.5em; text-indent: -1.5em; }
+    .list-item .num { font-weight: bold; display: inline-block; width: 1.5em; text-indent: 0; }
+    .form-table { width: 100%; max-width: 450px; margin: 15px 0 25px 0; border-collapse: collapse; }
+    .form-table td { padding: 6px 10px; vertical-align: bottom; }
+    .line-cell { border-bottom: 1.5px solid black; width: 180px; }
+    .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid #ffffff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .tab-scroll::-webkit-scrollbar { height: 6px; }
+    .tab-scroll::-webkit-scrollbar-track { background: transparent; }
+    .tab-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .tab-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .dragging { opacity: 0.5; cursor: grabbing !important; }
+    .office-tab { padding: 8px 16px; font-size: 14px; color: #333; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .office-tab:hover { background-color: #e2e8f0; }
+    .office-tab.active { color: #217346; border-bottom-color: #217346; font-weight: 600; }
+    .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #333; transition: background 0.2s; cursor: pointer; }
+    .ribbon-btn:hover { background-color: #e2e8f0; }
+    .ribbon-btn svg { width: 24px; height: 24px; margin-bottom: 2px; }
+    
+    .table-date-input {
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: 12px;
+      color: #475569;
+      padding: 4px;
+      border-radius: 4px;
+      cursor: pointer;
+      outline: none;
+      width: 100%;
+    }
+    .table-date-input:hover {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+    .table-date-input:focus {
+      border-color: #3b82f6;
+      background: #fff;
+    }
+    .table-date-input:disabled {
+      background: transparent;
+      color: #cbd5e1;
+      cursor: not-allowed;
+    }
+    .table-date-input:disabled:hover {
+      border-color: transparent;
+      background: transparent;
+    }
