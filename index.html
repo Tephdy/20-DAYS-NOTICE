@@ -358,7 +358,7 @@
         <div class="list-item"><span class="num">7.</span><strong>No Further Reminder Clause</strong> – The notice period shall not require any further reminder. The tenant is fully aware and responsible for compliance within the prescribed period.</div>
         <div class="list-item"><span class="num">8.</span><strong>Withdrawal After Confirmation</strong> – If the tenant confirms renewal but later withdraws or fails to proceed, Management reserves the right to charge 20% of the total Security Deposit.</div>
         <div class="list-item"><span class="num">9.</span><strong>Contract Signing Location</strong> – All lease renewals shall be signed exclusively at: Eve's Residences Office #69 Matahimik St., Riverside II, Santo Domingo, Cainta, Rizal.</div>
-        <div class="list-item"><span class="num">10.</span><strong>Advance Payment and Management Discretion</strong> – If the tenant chooses to renew the lease contract, the tenant shall be required to pay an amount equivalent to twenty percent (20%) of the total contract value, based on the selected lease term and monthly rental rate. This amount shall be paid prior to contract signing and shall form part of the lease payment. The tenant shall also pay an Occupancy Support Fee of ₱298.00 per month.<div class="ml-6 mt-1">a. Management reserves the right to amend, modify, or update policies and terms at its sole discretion as necessary for operational and administrative purposes.</div></div>
+        <div class="list-item"><span class="num">10.</span><strong>Advance Payment and Management Discretion</strong> – If the tenant chooses to renew the lease contract, the tenant shall be required to pay an amount equivalent to twenty percent (20%) of the total contract value, based on the selected lease term and monthly rental rate. This amount shall be paid prior to contract signing and shall form part of the lease payment.<span id="outOccupancySupportFee"> The tenant shall also pay an Occupancy Support Fee of ₱298.00 per month.</span><div class="ml-6 mt-1">a. Management reserves the right to amend, modify, or update policies and terms at its sole discretion as necessary for operational and administrative purposes.</div></div>
       </div>
       <div class="font-bold text-[16px] mt-8 mb-2">TENANT RESPONSE</div>
       <div>Please check one ( )</div>
@@ -1529,6 +1529,9 @@
         
         const pdfDateStr = formatDisplayDate(tenant.computed20th) || tenant.computed20th;
         const contractEndDateStr = formatDisplayDate(tenant.endContract) || tenant.endContract || '';
+        const propertyName = String(tenant.building || activeTab || '').toLowerCase().trim().replace(/\s+/g, ' ');
+        const isBedAndBath = propertyName === 'bed and bath';
+        safeSetText('outOccupancySupportFee', isBedAndBath ? '' : ' The tenant shall also pay an Occupancy Support Fee of ₱298.00 per month.');
 
         safeSetText('outNoticeDeadline', pdfDateStr || '');
         safeSetText('outEndContract', contractEndDateStr);

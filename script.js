@@ -1122,6 +1122,9 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvTv-hCnZoKT87
         
         const pdfDateStr = formatDisplayDate(tenant.computed20th) || tenant.computed20th;
         const contractEndDateStr = formatDisplayDate(tenant.endContract) || tenant.endContract || '';
+        const propertyName = String(tenant.building || activeTab || '').toLowerCase().trim().replace(/\s+/g, ' ');
+        const isBedAndBath = propertyName === 'bed and bath';
+        safeSetText('outOccupancySupportFee', isBedAndBath ? '' : ' The tenant shall also pay an Occupancy Support Fee of ₱298.00 per month.');
 
         safeSetText('outNoticeDeadline', pdfDateStr || '');
         safeSetText('outEndContract', contractEndDateStr);
