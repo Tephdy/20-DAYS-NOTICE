@@ -3,6 +3,7 @@ const MAIN_SPREADSHEET_ID = '16dehNzBJq2h_6uF4pPj4OhTJ_9Ja2QYYjt__K82Nz6M';
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxj5XbaBTofwthjYumNdlMOw0azJVsfGNqmbRD-Uykn4qnSKYdAZJd8vX4nGKFGTiDu/exec'; // <-- Paste your Apps Script Web App /exec URL here
 const MAIN_SPREADSHEET_TABS = ['ECO888', 'GREEN', 'ADI168', 'KALAYAAN888', 'PLEASANT', 'HOMEY', 'PENTHAUZ', 'DREAM', 'B&B'];
 const LOCAL_STORAGE_KEY = `lease_renewals_direct_cache_${MAIN_SPREADSHEET_ID}`;
+const TEMPLATE_STORAGE_KEY = `lease_intent_template_override_${MAIN_SPREADSHEET_ID}`;
 
 let appData = {};
 let activeTab = null;
@@ -10,6 +11,11 @@ const selectedTenants = new Set();
 let workbookCache = null;
 let currentEditingTenant = null;
 let isAddMode = false;
+
+let defaultTemplatePages = { page1: '', page2: '' };
+let customTemplatePages = null;
+let templateEditorActivePage = 'page1';
+let templatePreviewEnabled = false;
 
 const tabs = document.querySelectorAll('.office-tab');
 const contents = document.querySelectorAll('.ribbon-content');
@@ -30,6 +36,758 @@ function persistLocalCache() {
     console.warn('Could not cache spreadsheet data locally:', e);
   }
 }
+
+function htmlToEditableText(html) {
+  if (!html) return '';
+  const container = document.createElement('div');
+  container.innerHTML = html;
+
+  // Replace dynamic spans with readable {{tokens}} so users edit clean text
+  const idTokenMap = {
+    outDate: '{{date}}',
+    outTenant: '{{tenantName}}',
+    outTenant2: '{{tenantName}}',
+    outBuilding: '{{building}}',
+    outUnit: '{{unit}}',
+    outEndContract: '{{endContract}}',
+    outEndContract2: '{{endContract}}',
+    outNoticeDaysLabel: '{{noticeDays}}',
+    outNoticeDaysClause7: '{{noticeDays}}',
+    outDayLabelOrdinal: '{{dayOrdinal}}',
+    outNoticeDeadline: '{{noticeDeadline}}',
+    outDailyRate: '{{dailyRate}}',
+    outOverstayDays: '{{overstayDays}}',
+    outPenaltyWindowLabel: '{{penaltyWindow}}',
+    outPenaltyStartWindowTitle: '{{penaltyWindowTitle}}',
+    outPenaltyStartDate: '{{penaltyStartDate}}',
+    outTermLabel: '{{termLabel}}',
+    outRent: '{{rent}}',
+    outReason: '{{reason}}',
+    outSignature2: '{{tenantName}}'
+  };
+
+  Object.entries(idTokenMap).forEach(([id, token]) => {
+    const el = container.querySelector(`#${id}`);
+    if (el) el.replaceWith(document.createTextNode(token));
+  });
+
+  container.querySelectorAll('.outNoticeWindow').forEach(el => {
+    el.replaceWith(document.createTextNode('{{noticeWindow}}'));
+  });
+  container.querySelectorAll('.outPenaltyWindow').forEach(el => {
+    el.replaceWith(document.createTextNode('{{penaltyWindow}}'));
+  });
+  container.querySelectorAll('.outDailyRate').forEach(el => {
+    el.replaceWith(document.createTextNode('{{dailyRate}}'));
+  });
+  container.querySelectorAll('.outTermLabel').forEach(el => {
+    el.replaceWith(document.createTextNode('{{termLabel}}'));
+  });
+
+  const yesEl = container.querySelector('#outCheckYes');
+  if (yesEl) yesEl.replaceWith(document.createTextNode('[ ]'));
+  const noEl = container.querySelector('#outCheckNo');
+  if (noEl) noEl.replaceWith(document.createTextNode('[ ]'));
+
+  // Remove decorative images/tables that shouldn't clutter text editing
+  container.querySelectorAll('img').forEach(el => el.remove());
+
+  const lines = [];
+  function walkBlock(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const txt = node.nodeValue.replace(/\s+/g, ' ').trim();
+      if (txt) lines.push(txt);
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    const tag = node.tagName.toLowerCase();
+    if (tag === 'br') {
+      lines.push('');
+      return;
+    }
+    if (tag === 'table') {
+      lines.push('From: ____________________    To: ____________________');
+      lines.push('');
+      return;
+    }
+
+    const isBlock = ['div', 'p', 'h1', 'h2', 'h3', 'h4', 'li', 'ol', 'ul'].includes(tag);
+    if (tag === 'li') {
+      const text = node.innerText.replace(/\s+/g, ' ').trim();
+      if (text) lines.push(`- ${text}`);
+      return;
+    }
+
+    // If leaf block element (no child blocks), output as single line
+    const hasChildBlocks = Array.from(node.children).some(c =>
+      ['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'LI', 'OL', 'UL', 'TABLE'].includes(c.tagName)
+    );
+
+    if (isBlock && !hasChildBlocks) {
+      const text = node.innerText.replace(/\s+/g, ' ').trim();
+      if (text) {
+        lines.push(text);
+        if (['p', 'h1', 'h2', 'h3', 'h4'].includes(tag)) lines.push('');
+      }
+      return;
+    }
+
+    Array.from(node.childNodes).forEach(walkBlock);
+    if (['p', 'ol', 'ul'].includes(tag)) lines.push('');
+  }
+
+  Array.from(container.childNodes).forEach(walkBlock);
+
+  return lines
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function escapeHtmlSafe(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function wireDynamicSpansInConvertedHtml(html) {
+  let out = html;
+
+  // Map {{tokens}} back to their live IDs/classes so PDF generation updates them dynamically
+  const tokenToHtml = [
+    [/\{\{\s*date\s*\}\}/g, '<span id="outDate"></span>'],
+    [/\{\{\s*building\s*\}\}/g, '<span id="outBuilding"></span>'],
+    [/\{\{\s*unit\s*\}\}/g, '<span id="outUnit"></span>'],
+    [/\{\{\s*noticeDays\s*\}\}/g, '<span id="outNoticeDaysLabel">20</span>'],
+    [/\{\{\s*dayOrdinal\s*\}\}/g, '<span id="outDayLabelOrdinal">20th</span>'],
+    [/\{\{\s*noticeDeadline\s*\}\}/g, '<strong id="outNoticeDeadline"></strong>'],
+    [/\{\{\s*noticeWindow\s*\}\}/g, '<span class="outNoticeWindow">last 20 days to last 15 days</span>'],
+    [/\{\{\s*penaltyWindow\s*\}\}/g, '<span class="outPenaltyWindow">last 14 days</span>'],
+    [/\{\{\s*penaltyWindowTitle\s*\}\}/g, '<span id="outPenaltyStartWindowTitle">Last 14 days</span>'],
+    [/\{\{\s*penaltyStartDate\s*\}\}/g, '<strong id="outPenaltyStartDate"></strong>'],
+    [/\{\{\s*dailyRate\s*\}\}/g, '<strong class="outDailyRate" id="outDailyRate">₱700.00</strong>'],
+    [/\{\{\s*overstayDays\s*\}\}/g, '<b><span id="outOverstayDays">7 days</span></b>'],
+    [/\{\{\s*termLabel\s*\}\}/g, '<strong id="outTermLabel" class="outTermLabel"></strong>'],
+    [/\{\{\s*rent\s*\}\}/g, '<strong><span id="outRent"></span></strong>'],
+    [/\{\{\s*reason\s*\}\}/g, '<span id="outReason"></span>']
+  ];
+
+  tokenToHtml.forEach(([regex, replacement]) => {
+    out = out.replace(regex, replacement);
+  });
+
+  // Handle first vs second occurrence of {{tenantName}} and {{endContract}}
+  let tenantCount = 0;
+  out = out.replace(/\{\{\s*tenantName\s*\}\}/g, () => {
+    tenantCount++;
+    if (tenantCount === 1) return '<span id="outTenant"></span>';
+    if (tenantCount === 2) return '<strong><span id="outTenant2"></span></strong>';
+    return '<span id="outSignature2"></span>';
+  });
+
+  let endCount = 0;
+  out = out.replace(/\{\{\s*endContract\s*\}\}/g, () => {
+    endCount++;
+    return endCount === 1
+      ? '<strong id="outEndContract"></strong>'
+      : '<strong><span id="outEndContract2"></span></strong>';
+  });
+
+  // Wire checkboxes if present
+  out = out.replace(/^\[\s*\]\s*(YES,.*)$/gm, '<span id="outCheckYes">[   ]</span> <strong>$1</strong>');
+  out = out.replace(/^\[\s*\]\s*(NO,.*)$/gm, '<span id="outCheckNo">[   ]</span> <strong>$1</strong>');
+
+  return out;
+}
+
+function textToStyledTemplateHtml(plainText, pageKey = 'page1') {
+  const rawLines = String(plainText || '').replace(/\r\n/g, '\n').split('\n');
+  const htmlBlocks = [];
+  let listBuffer = [];
+
+  if (pageKey === 'page1') {
+    htmlBlocks.push(`
+      <div class="w-full flex justify-center mb-6">
+        <img src="img/1.png" alt="Logo" style="max-height: 80px;" onerror="this.style.display='none'">
+      </div>
+    `);
+  }
+
+  const flushList = () => {
+    if (listBuffer.length === 0) return;
+    htmlBlocks.push(`<div class="space-y-2 mb-4">${listBuffer.join('\n')}</div>`);
+    listBuffer = [];
+  };
+
+  rawLines.forEach((rawLine, index) => {
+    const line = rawLine.trim();
+    if (!line) {
+      flushList();
+      return;
+    }
+
+    let safeLine = wireDynamicSpansInConvertedHtml(escapeHtmlSafe(line));
+
+    // Bold leading ALL-CAPS label before dash/colon (e.g., "1. CONTRACT SIGNING PERIOD – ...")
+    safeLine = safeLine.replace(
+      /^(\d+\.\s*)([A-Z0-9\s\/&()-]{4,}?)(\s*[–—:-]\s*)/,
+      '$1<strong>$2</strong>$3'
+    );
+    safeLine = safeLine.replace(
+      /^(Date:|Tenant Name:|Building:|Unit No\.:|Reason:)/,
+      '<strong>$1</strong>'
+    );
+
+    // Numbered or bulleted list items
+    const numberedMatch = line.match(/^(\d+\.)\s*(.+)$/);
+    if (numberedMatch) {
+      const bodyWithBold = safeLine.replace(/^(\d+\.)\s*/, '');
+      listBuffer.push(`<div class="list-item"><span class="num">${numberedMatch[1]}</span>${bodyWithBold}</div>`);
+      return;
+    }
+
+    if (line.startsWith('- ') || line.startsWith('• ')) {
+      const itemBody = safeLine.replace(/^[-•]\s*/, '');
+      listBuffer.push(`<div class="list-item ml-4">&bull; ${itemBody}</div>`);
+      return;
+    }
+
+    flushList();
+
+    // Main title header on Page 1
+    if (pageKey === 'page1' && index === 0 && /NOTICE/i.test(line)) {
+      htmlBlocks.push(`<div id="pdfTitleHeader" class="text-center font-bold text-[17px] uppercase tracking-wide">${safeLine}</div>`);
+      return;
+    }
+
+    if (pageKey === 'page1' && /^\(Letter of Intent\)$/i.test(line)) {
+      htmlBlocks.push(`<div class="text-center font-bold text-[15px] mb-5">${safeLine}</div>`);
+      return;
+    }
+
+    // Section headings (ALL CAPS lines)
+    if (/^[A-Z0-9\s&\/()-]{5,}$/.test(line) && !line.startsWith('[')) {
+      htmlBlocks.push(`<div class="font-bold text-[16px] uppercase mt-5 mb-2">${safeLine}</div>`);
+      return;
+    }
+
+    // From / To signature table line
+    if (/^From:\s*_+.*To:\s*_+/i.test(line)) {
+      htmlBlocks.push(`
+        <table class="form-table my-3">
+          <tr>
+            <td class="font-bold text-[16px]">From:</td>
+            <td class="line-cell"></td>
+            <td class="font-bold text-center text-[16px]" style="width: 40px;">To:</td>
+            <td class="line-cell"></td>
+          </tr>
+        </table>
+      `);
+      return;
+    }
+
+    // Tenant signature line on Page 2
+    if (pageKey === 'page2' && /^TENANT[’']S SIGNATURE$/i.test(line)) {
+      htmlBlocks.push(`
+        <div class="mt-14 w-[250px]">
+          <div class="border-t-2 border-black pt-1 text-center"><span id="outSignature2"></span></div>
+          <div class="text-center text-sm mt-1">${safeLine}</div>
+        </div>
+      `);
+      return;
+    }
+
+    htmlBlocks.push(`<p class="mb-2.5 leading-relaxed">${safeLine}</p>`);
+  });
+
+  flushList();
+  return htmlBlocks.join('\n');
+}
+
+function captureDefaultTemplates() {
+  const p1 = document.getElementById('page-1');
+  const p2 = document.getElementById('page-2');
+  if (p1 && !defaultTemplatePages.page1) defaultTemplatePages.page1 = p1.innerHTML;
+  if (p2 && !defaultTemplatePages.page2) defaultTemplatePages.page2 = p2.innerHTML;
+
+  try {
+    const saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && (typeof parsed.page1 === 'string' || typeof parsed.page2 === 'string')) {
+        customTemplatePages = {
+          page1: typeof parsed.page1 === 'string' ? parsed.page1 : defaultTemplatePages.page1,
+          page2: typeof parsed.page2 === 'string' ? parsed.page2 : defaultTemplatePages.page2
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('Could not load saved intent letter template:', e);
+  }
+}
+
+function getActiveTemplatePages() {
+  captureDefaultTemplates();
+  return {
+    page1: (customTemplatePages && typeof customTemplatePages.page1 === 'string') ? customTemplatePages.page1 : defaultTemplatePages.page1,
+    page2: (customTemplatePages && typeof customTemplatePages.page2 === 'string') ? customTemplatePages.page2 : defaultTemplatePages.page2
+  };
+}
+
+function applyTemplateHtmlToDom() {
+  const activePages = getActiveTemplatePages();
+  const p1 = document.getElementById('page-1');
+  const p2 = document.getElementById('page-2');
+  if (p1 && typeof activePages.page1 === 'string') p1.innerHTML = activePages.page1;
+  if (p2 && typeof activePages.page2 === 'string') p2.innerHTML = activePages.page2;
+}
+
+let templateEditorMode = 'visual'; // 'visual' | 'html'
+
+function captureDefaultTemplates() {
+  const p1 = document.getElementById('page-1');
+  const p2 = document.getElementById('page-2');
+  if (p1 && !defaultTemplatePages.page1) defaultTemplatePages.page1 = p1.innerHTML;
+  if (p2 && !defaultTemplatePages.page2) defaultTemplatePages.page2 = p2.innerHTML;
+
+  try {
+    const saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && (typeof parsed.page1 === 'string' || typeof parsed.page2 === 'string')) {
+        customTemplatePages = {
+          page1: typeof parsed.page1 === 'string' ? parsed.page1 : defaultTemplatePages.page1,
+          page2: typeof parsed.page2 === 'string' ? parsed.page2 : defaultTemplatePages.page2
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('Could not load saved intent letter template:', e);
+  }
+}
+
+function getActiveTemplatePages() {
+  captureDefaultTemplates();
+  return {
+    page1: (customTemplatePages && typeof customTemplatePages.page1 === 'string') ? customTemplatePages.page1 : defaultTemplatePages.page1,
+    page2: (customTemplatePages && typeof customTemplatePages.page2 === 'string') ? customTemplatePages.page2 : defaultTemplatePages.page2
+  };
+}
+
+function applyTemplateHtmlToDom() {
+  const activePages = getActiveTemplatePages();
+  const p1 = document.getElementById('page-1');
+  const p2 = document.getElementById('page-2');
+  if (p1 && typeof activePages.page1 === 'string') p1.innerHTML = activePages.page1;
+  if (p2 && typeof activePages.page2 === 'string') p2.innerHTML = activePages.page2;
+}
+
+function injectRichEditorStyles() {
+  if (document.getElementById('richTemplateEditorStyles')) return;
+  const style = document.createElement('style');
+  style.id = 'richTemplateEditorStyles';
+  style.textContent = `
+    #intentVisualEditor {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #0f172a;
+      background: #ffffff;
+      min-height: 460px;
+      padding: 28px 34px;
+      outline: none;
+    }
+    #intentVisualEditor .list-item {
+      margin-bottom: 8px;
+    }
+    #intentVisualEditor .list-item .num {
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    #intentVisualEditor .form-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+    }
+    #intentVisualEditor .form-table .line-cell {
+      border-bottom: 1.5px solid #0f172a;
+      width: 40%;
+    }
+    /* Highlight dynamic spans in the editor so they are easy to spot without breaking IDs */
+    #intentVisualEditor span[id^="out"],
+    #intentVisualEditor strong[id^="out"],
+    #intentVisualEditor span[class*="out"] {
+      background-color: #fef9c3;
+      border-bottom: 1px dashed #ca8a04;
+      padding: 0 3px;
+      border-radius: 3px;
+    }
+    #intentVisualEditor span[id^="out"]:empty::before,
+    #intentVisualEditor strong[id^="out"]:empty::before {
+      content: attr(data-placeholder);
+      color: #854d0e;
+      font-size: 11px;
+      font-family: monospace;
+    }
+    .wp-tool-btn {
+      padding: 4px 8px;
+      border-radius: 5px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #1e293b;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      transition: background 0.15s;
+    }
+    .wp-tool-btn:hover {
+      background: #e2e8f0;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function hydrateEmptyPlaceholdersForVisualEditor(container) {
+  const placeholderLabels = {
+    outDate: '{{Date}}',
+    outTenant: '{{Tenant Name}}',
+    outTenant2: '{{Tenant Name}}',
+    outBuilding: '{{Building}}',
+    outUnit: '{{Unit}}',
+    outEndContract: '{{End Contract}}',
+    outEndContract2: '{{End Contract}}',
+    outNoticeDeadline: '{{Notice Deadline}}',
+    outPenaltyStartDate: '{{Penalty Start Date}}',
+    outTermLabel: '{{Lease Term}}',
+    outRent: '{{Monthly Rent}}',
+    outReason: '{{Reason}}',
+    outSignature2: '{{Tenant Signature}}'
+  };
+
+  Object.entries(placeholderLabels).forEach(([id, label]) => {
+    const el = container.querySelector(`#${id}`);
+    if (el) el.setAttribute('data-placeholder', label);
+  });
+}
+
+function cleanVisualEditorHtmlForSave(container) {
+  const clone = container.cloneNode(true);
+  clone.querySelectorAll('[data-placeholder]').forEach(el => {
+    el.removeAttribute('data-placeholder');
+  });
+  return clone.innerHTML;
+}
+
+function ensureTemplateEditorModal() {
+  captureDefaultTemplates();
+  injectRichEditorStyles();
+
+  let modal = document.getElementById('intentTemplateModal');
+  if (modal) return modal;
+
+  modal = document.createElement('div');
+  modal.id = 'intentTemplateModal';
+  modal.className = 'fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 p-3 md:p-6';
+  modal.innerHTML = `
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-5 py-3 bg-[#217346] text-white flex items-center justify-between gap-3">
+        <div>
+          <h3 class="font-bold text-base">Intent Letter Word Processor</h3>
+          <p class="text-xs text-white/85">Highlight any word to apply Bold, Italic, Underline, alignment, or size. Yellow-highlighted fields auto-fill tenant data.</p>
+        </div>
+        <button type="button" onclick="closeTemplateEditorModal()" class="text-white/80 hover:text-white text-2xl font-bold px-2 leading-none">&times;</button>
+      </div>
+
+      <!-- Page Tabs & Mode Switcher -->
+      <div class="px-4 py-2 bg-slate-100 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <button type="button" id="tplTabPage1" onclick="switchTemplateEditorPage('page1')" class="px-3 py-1.5 rounded text-xs font-bold bg-[#217346] text-white">Page 1 (Terms)</button>
+          <button type="button" id="tplTabPage2" onclick="switchTemplateEditorPage('page2')" class="px-3 py-1.5 rounded text-xs font-bold bg-white text-slate-700 border border-slate-300">Page 2 (Response &amp; Letter)</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="tplModeToggleBtn" onclick="toggleTemplateEditorMode()" class="px-3 py-1.5 rounded text-xs font-bold bg-slate-700 text-white hover:bg-slate-800">View HTML Code</button>
+        </div>
+      </div>
+
+      <!-- Word Processor Formatting Toolbar -->
+      <div id="wpFormattingToolbar" class="px-4 py-2 bg-slate-50 border-b border-slate-300 flex flex-wrap items-center gap-1.5 select-none">
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('undo')" class="wp-tool-btn" title="Undo (Ctrl+Z)">&#8630;</button>
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('redo')" class="wp-tool-btn" title="Redo (Ctrl+Y)">&#8631;</button>
+
+        <span class="h-5 w-px bg-slate-300 mx-1"></span>
+
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('bold')" class="wp-tool-btn font-extrabold" title="Bold (Ctrl+B)">B</button>
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('italic')" class="wp-tool-btn italic font-serif" title="Italic (Ctrl+I)">I</button>
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('underline')" class="wp-tool-btn underline" title="Underline (Ctrl+U)">U</button>
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('strikeThrough')" class="wp-tool-btn line-through" title="Strikethrough">S</button>
+
+        <span class="h-5 w-px bg-slate-300 mx-1"></span>
+
+        <select onchange="execWpCommand('fontSize', this.value); this.selectedIndex=0;" class="h-7 px-2 text-xs border border-slate-300 rounded bg-white text-slate-700" title="Font Size">
+          <option value="">Size...</option>
+          <option value="2">Small (12px)</option>
+          <option value="3">Normal (14px)</option>
+          <option value="4">Medium (16px)</option>
+          <option value="5">Large (18px)</option>
+          <option value="6">Heading (24px)</option>
+        </select>
+
+        <label class="wp-tool-btn gap-1 px-2" title="Text Color">
+          <span class="font-bold text-xs">A</span>
+          <input type="color" value="#0f172a" onchange="execWpCommand('foreColor', this.value)" class="w-4 h-4 border-0 p-0 bg-transparent cursor-pointer">
+        </label>
+
+        <label class="wp-tool-btn gap-1 px-2" title="Highlight Color">
+          <span class="text-[11px] font-bold bg-yellow-200 px-1 rounded">H</span>
+          <input type="color" value="#fef08a" onchange="execWpCommand('hiliteColor', this.value)" class="w-4 h-4 border-0 p-0 bg-transparent cursor-pointer">
+        </label>
+
+        <span class="h-5 w-px bg-slate-300 mx-1"></span>
+
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('justifyLeft')" class="wp-tool-btn" title="Align Left">&#8676;</button>
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('justifyCenter')" class="wp-tool-btn" title="Align Center">&#8596;</button>
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('justifyRight')" class="wp-tool-btn" title="Align Right">&#8677;</button>
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('justifyFull')" class="wp-tool-btn" title="Justify">&#9776;</button>
+
+        <span class="h-5 w-px bg-slate-300 mx-1"></span>
+
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('insertUnorderedList')" class="wp-tool-btn" title="Bullet List">&bull; List</button>
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('insertOrderedList')" class="wp-tool-btn" title="Numbered List">1. List</button>
+        <button type="button" onmousedown="event.preventDefault(); execWpCommand('removeFormat')" class="wp-tool-btn text-rose-600" title="Clear Formatting">Clear</button>
+
+        <span class="h-5 w-px bg-slate-300 mx-1"></span>
+
+        <select onchange="insertDynamicFieldPill(this.value); this.selectedIndex=0;" class="h-7 px-2 text-xs border border-amber-400 rounded bg-amber-50 text-amber-950 font-semibold" title="Insert Auto-Fill Tenant Field">
+          <option value="">+ Insert Dynamic Field...</option>
+          <option value="tenantName">Tenant Name</option>
+          <option value="unit">Unit No.</option>
+          <option value="building">Building</option>
+          <option value="rent">Monthly Rent</option>
+          <option value="dailyRate">Overstay Daily Rate</option>
+          <option value="termLabel">Lease Term</option>
+          <option value="endContract">End of Contract Date</option>
+          <option value="noticeDeadline">Notice Deadline Date</option>
+          <option value="penaltyStartDate">Penalty Start Date</option>
+          <option value="date">Current Date</option>
+        </select>
+      </div>
+
+      <!-- Document Workspace -->
+      <div class="p-4 md:p-6 flex-1 overflow-y-auto bg-slate-200/80 flex justify-center">
+        <!-- Word Processor Paper Canvas -->
+        <div id="intentVisualEditorWrapper" class="w-full max-w-[794px] bg-white shadow-lg border border-slate-300 rounded">
+          <div id="intentVisualEditor" contenteditable="true" spellcheck="true"></div>
+        </div>
+
+        <!-- Optional Raw HTML Code View -->
+        <textarea id="intentTemplateHtmlSource" rows="20" class="hidden w-full font-mono text-xs p-4 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#217346] bg-slate-900 text-emerald-300"></textarea>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        <button type="button" onclick="resetTemplateToDefault()" class="px-3 py-1.5 rounded text-xs font-bold bg-amber-100 text-amber-900 hover:bg-amber-200">Reset to Original Template</button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeTemplateEditorModal()" class="px-4 py-1.5 rounded text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">Cancel</button>
+          <button type="button" onclick="saveTemplateEditor()" class="px-4 py-1.5 rounded text-xs font-bold bg-[#217346] text-white hover:opacity-95">Save Template</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+window.execWpCommand = function(command, value = null) {
+  const editor = document.getElementById('intentVisualEditor');
+  if (!editor) return;
+  editor.focus();
+  document.execCommand(command, false, value);
+  syncActiveEditorToDraft();
+};
+
+window.insertDynamicFieldPill = function(fieldKey) {
+  if (!fieldKey) return;
+  const editor = document.getElementById('intentVisualEditor');
+  if (!editor) return;
+  editor.focus();
+
+  const fieldMap = {
+    tenantName: '<span id="outTenant" data-placeholder="{{Tenant Name}}"></span>',
+    unit: '<span id="outUnit" data-placeholder="{{Unit}}"></span>',
+    building: '<span id="outBuilding" data-placeholder="{{Building}}"></span>',
+    rent: '<strong><span id="outRent" data-placeholder="{{Monthly Rent}}"></span></strong>',
+    dailyRate: '<strong class="outDailyRate" id="outDailyRate">₱700.00</strong>',
+    termLabel: '<strong id="outTermLabel" class="outTermLabel" data-placeholder="{{Lease Term}}"></strong>',
+    endContract: '<strong id="outEndContract" data-placeholder="{{End Contract}}"></strong>',
+    noticeDeadline: '<strong id="outNoticeDeadline" data-placeholder="{{Notice Deadline}}"></strong>',
+    penaltyStartDate: '<strong id="outPenaltyStartDate" data-placeholder="{{Penalty Start Date}}"></strong>',
+    date: '<span id="outDate" data-placeholder="{{Date}}"></span>'
+  };
+
+  const snippet = fieldMap[fieldKey];
+  if (snippet) {
+    document.execCommand('insertHTML', false, snippet + '&nbsp;');
+    syncActiveEditorToDraft();
+  }
+};
+
+function syncActiveEditorToDraft() {
+  if (!window.__draftTemplatePages) return;
+  if (templateEditorMode === 'visual') {
+    const editor = document.getElementById('intentVisualEditor');
+    if (editor) {
+      window.__draftTemplatePages[templateEditorActivePage] = cleanVisualEditorHtmlForSave(editor);
+    }
+  } else {
+    const sourceArea = document.getElementById('intentTemplateHtmlSource');
+    if (sourceArea) {
+      window.__draftTemplatePages[templateEditorActivePage] = sourceArea.value;
+    }
+  }
+}
+
+function refreshTemplateEditorView() {
+  const tab1 = document.getElementById('tplTabPage1');
+  const tab2 = document.getElementById('tplTabPage2');
+  const modeBtn = document.getElementById('tplModeToggleBtn');
+  const toolbar = document.getElementById('wpFormattingToolbar');
+  const visualWrapper = document.getElementById('intentVisualEditorWrapper');
+  const visualEditor = document.getElementById('intentVisualEditor');
+  const htmlSource = document.getElementById('intentTemplateHtmlSource');
+
+  if (tab1 && tab2) {
+    const activeClass = 'px-3 py-1.5 rounded text-xs font-bold bg-[#217346] text-white';
+    const inactiveClass = 'px-3 py-1.5 rounded text-xs font-bold bg-white text-slate-700 border border-slate-300';
+    tab1.className = templateEditorActivePage === 'page1' ? activeClass : inactiveClass;
+    tab2.className = templateEditorActivePage === 'page2' ? activeClass : inactiveClass;
+  }
+
+  const currentHtml = (window.__draftTemplatePages && window.__draftTemplatePages[templateEditorActivePage]) || '';
+
+  if (templateEditorMode === 'visual') {
+    if (modeBtn) modeBtn.textContent = 'View HTML Code';
+    if (toolbar) toolbar.classList.remove('hidden');
+    if (visualWrapper) visualWrapper.classList.remove('hidden');
+    if (htmlSource) htmlSource.classList.add('hidden');
+    if (visualEditor) {
+      visualEditor.innerHTML = currentHtml;
+      hydrateEmptyPlaceholdersForVisualEditor(visualEditor);
+    }
+  } else {
+    if (modeBtn) modeBtn.textContent = 'Back to Word Processor';
+    if (toolbar) toolbar.classList.add('hidden');
+    if (visualWrapper) visualWrapper.classList.add('hidden');
+    if (htmlSource) {
+      htmlSource.classList.remove('hidden');
+      htmlSource.value = currentHtml;
+    }
+  }
+}
+
+window.openTemplateEditorModal = function(initialPage = 'page1') {
+  const modal = ensureTemplateEditorModal();
+  const currentPages = getActiveTemplatePages();
+  window.__draftTemplatePages = {
+    page1: currentPages.page1 || '',
+    page2: currentPages.page2 || ''
+  };
+  templateEditorMode = 'visual';
+  templateEditorActivePage = initialPage === 'page2' ? 'page2' : 'page1';
+  refreshTemplateEditorView();
+
+  const visualEditor = document.getElementById('intentVisualEditor');
+  if (visualEditor) {
+    visualEditor.oninput = () => syncActiveEditorToDraft();
+  }
+  const htmlSource = document.getElementById('intentTemplateHtmlSource');
+  if (htmlSource) {
+    htmlSource.oninput = () => syncActiveEditorToDraft();
+  }
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+};
+
+window.toggleTemplateEditorMode = function() {
+  syncActiveEditorToDraft();
+  templateEditorMode = templateEditorMode === 'visual' ? 'html' : 'visual';
+  refreshTemplateEditorView();
+};
+
+window.closeTemplateEditorModal = function() {
+  const modal = document.getElementById('intentTemplateModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  window.__draftTemplatePages = null;
+};
+
+window.switchTemplateEditorPage = function(pageKey) {
+  syncActiveEditorToDraft();
+  templateEditorActivePage = pageKey === 'page2' ? 'page2' : 'page1';
+  refreshTemplateEditorView();
+};
+
+window.saveTemplateEditor = async function() {
+  syncActiveEditorToDraft();
+  if (!window.__draftTemplatePages) return;
+
+  customTemplatePages = {
+    page1: window.__draftTemplatePages.page1,
+    page2: window.__draftTemplatePages.page2
+  };
+
+  try {
+    localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(customTemplatePages));
+  } catch (e) {
+    console.warn('Could not persist custom template to localStorage:', e);
+  }
+
+  applyTemplateHtmlToDom();
+
+  if (WEB_APP_URL && WEB_APP_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+    try {
+      await postToAppsScript({
+        action: 'saveTemplate',
+        page1Html: customTemplatePages.page1,
+        page2Html: customTemplatePages.page2
+      });
+    } catch (e) {
+      console.warn('Template saved locally, but remote sync failed:', e);
+    }
+  }
+
+  closeTemplateEditorModal();
+  alert('Intent Letter template saved!');
+};
+
+window.resetTemplateToDefault = function() {
+  captureDefaultTemplates();
+  const confirmReset = confirm('Reset the Intent Letter template back to its original built-in template?');
+  if (!confirmReset) return;
+
+  customTemplatePages = null;
+  try {
+    localStorage.removeItem(TEMPLATE_STORAGE_KEY);
+  } catch (e) {}
+
+  window.__draftTemplatePages = {
+    page1: defaultTemplatePages.page1,
+    page2: defaultTemplatePages.page2
+  };
+  applyTemplateHtmlToDom();
+  refreshTemplateEditorView();
+};
+
+document.getElementById('editIntentTemplateBtn')?.addEventListener('click', () => openTemplateEditorModal('page1'));
+document.getElementById('headerEditTemplateBtn')?.addEventListener('click', () => openTemplateEditorModal('page1'));
 
 async function postToAppsScript(payload) {
   if (!WEB_APP_URL || WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
@@ -293,6 +1051,9 @@ function hydrateTenantRecord(source, tabName) {
 }
 
 async function initDatabase(preserveTab = false, forceRemote = true) {
+  captureDefaultTemplates();
+  applyTemplateHtmlToDom();
+
   const loadingOverlay = document.getElementById('loadingOverlay');
   loadingOverlay.classList.remove('hidden');
   loadingOverlay.classList.add('flex');
@@ -1350,6 +2111,13 @@ window.updateComputed20th = async function(tenantName, newDateStr, unit) {
   renderSpreadsheet();
 };
 
+function interpolateTemplateTokens(htmlStr, tokenMap) {
+  if (!htmlStr || typeof htmlStr !== 'string') return '';
+  return htmlStr.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) =>
+    Object.prototype.hasOwnProperty.call(tokenMap, key) ? String(tokenMap[key] ?? '') : ''
+  );
+}
+
 function applyContractDistinctions(rootEl, longTerm) {
   if (!rootEl) return;
 
@@ -1460,7 +2228,7 @@ async function generatePDFDoc(tenant) {
   const longTerm = isLongTerm(exactTermText);
   const propertySource = tenant.building || activeTab || '';
   const dailyRateFormatted = formatPeso(getDailyRateByProperty(propertySource));
-  const calculatedRent = computeCalculatedRent(tenant, activeTab);
+  const calculatedRentFormatted = formatPeso(computeCalculatedRent(tenant, activeTab));
 
   const noticeDaysStr = longTerm ? '20' : '10';
   const titleText = `${noticeDaysStr}-DAY NOTICE & ADVANCE AGREEMENT FOR RENEWAL OF CONTRACT`;
@@ -1477,7 +2245,55 @@ async function generatePDFDoc(tenant) {
   const page1 = document.getElementById('page-1');
   const page2 = document.getElementById('page-2');
 
+  const todayDisplay = formatLongDate(tenant.date) || formatLongDate(new Date());
+  const noticeDeadlineDisplay = formatLongDate(tenant.computed20th) || tenant.computed20th || '_________________________';
+  const contractEndDisplay = formatLongDate(tenant.endContract) || tenant.endContract || '________________________';
+
+  let penaltyStartDisplay = '';
+  const endIso = toDateInputValue(tenant.endContract);
+  const noticeIso = toDateInputValue(tenant.computed20th);
+  if (endIso) {
+    const [y, m, d] = endIso.split('-').map(Number);
+    const pDate = new Date(y, m - 1, d);
+    pDate.setDate(pDate.getDate() - (longTerm ? 14 : 4));
+    penaltyStartDisplay = formatLongDate(pDate);
+  } else if (noticeIso) {
+    const [y, m, d] = noticeIso.split('-').map(Number);
+    const pDate = new Date(y, m - 1, d);
+    pDate.setDate(pDate.getDate() + 6);
+    penaltyStartDisplay = formatLongDate(pDate);
+  } else {
+    penaltyStartDisplay = formatLongDate(tenant.sixthDay) || tenant.sixthDay || '_________________________';
+  }
+
+  const reasonDisplay = tenant.reason && tenant.reason !== '—' ? tenant.reason : '________________________________________';
+  const tokenMap = {
+    tenantName: tenant.tenantName || '',
+    unit: tenant.unit || '',
+    building: tenant.building || '',
+    rent: calculatedRentFormatted,
+    dailyRate: dailyRateFormatted,
+    termLabel: exactTermText,
+    noticeDays: noticeDaysStr,
+    noticeWindow: noticeWindowStr,
+    overstayDays: overstayDaysStr,
+    penaltyWindow: penaltyWindowLower,
+    endContract: contractEndDisplay,
+    noticeDeadline: noticeDeadlineDisplay,
+    penaltyStartDate: penaltyStartDisplay,
+    date: todayDisplay,
+    reason: reasonDisplay
+  };
+
   try {
+    const activePages = getActiveTemplatePages();
+    if (page1 && typeof activePages.page1 === 'string') {
+      page1.innerHTML = interpolateTemplateTokens(activePages.page1, tokenMap);
+    }
+    if (page2 && typeof activePages.page2 === 'string') {
+      page2.innerHTML = interpolateTemplateTokens(activePages.page2, tokenMap);
+    }
+
     applyContractDistinctions(page1, longTerm);
     applyContractDistinctions(page2, longTerm);
     applyDailyRateToTemplate(page1, dailyRateFormatted);
@@ -1507,42 +2323,20 @@ async function generatePDFDoc(tenant) {
       el.textContent = dailyRateFormatted;
     });
 
-    const todayDisplay = formatLongDate(tenant.date) || formatLongDate(new Date());
     safeSetText('outDate', todayDisplay);
     safeSetText('outTenant', tenant.tenantName || '');
     safeSetText('outBuilding', tenant.building || '');
     safeSetText('outUnit', tenant.unit || '');
-
-    const noticeDeadlineDisplay = formatLongDate(tenant.computed20th) || tenant.computed20th || '_________________________';
-    const contractEndDisplay = formatLongDate(tenant.endContract) || tenant.endContract || '________________________';
-
-    let penaltyStartDisplay = '';
-    const endIso = toDateInputValue(tenant.endContract);
-    const noticeIso = toDateInputValue(tenant.computed20th);
-    if (endIso) {
-      const [y, m, d] = endIso.split('-').map(Number);
-      const pDate = new Date(y, m - 1, d);
-      pDate.setDate(pDate.getDate() - (longTerm ? 14 : 4));
-      penaltyStartDisplay = formatLongDate(pDate);
-    } else if (noticeIso) {
-      const [y, m, d] = noticeIso.split('-').map(Number);
-      const pDate = new Date(y, m - 1, d);
-      pDate.setDate(pDate.getDate() + 6);
-      penaltyStartDisplay = formatLongDate(pDate);
-    } else {
-      penaltyStartDisplay = formatLongDate(tenant.sixthDay) || tenant.sixthDay || '_________________________';
-    }
-
     safeSetText('outEndContract', contractEndDisplay);
     safeSetText('outNoticeDeadline', noticeDeadlineDisplay);
     safeSetText('outPenaltyStartDate', penaltyStartDisplay);
 
     safeSetText('outCheckYes', (tenant.choice && tenant.choice.toUpperCase() === 'YES') ? '☑' : '☐');
     safeSetText('outCheckNo', (tenant.choice && tenant.choice.toUpperCase() === 'NO') ? '☑' : '☐');
-    safeSetText('outReason', tenant.reason && tenant.reason !== '—' ? tenant.reason : '________________________________________');
+    safeSetText('outReason', reasonDisplay);
 
     safeSetText('outTenant2', tenant.tenantName || '');
-    safeSetText('outRent', formatPeso(calculatedRent));
+    safeSetText('outRent', calculatedRentFormatted);
     safeSetText('outEndContract2', contractEndDisplay);
     safeSetText('outSignature2', tenant.tenantName || '');
 
@@ -1979,4 +2773,8 @@ document.getElementById('confirmLoadSheetBtn')?.addEventListener('click', async 
   }
 });
 
-window.onload = () => initDatabase(false, true);
+window.onload = () => {
+  captureDefaultTemplates();
+  applyTemplateHtmlToDom();
+  initDatabase(false, true);
+};

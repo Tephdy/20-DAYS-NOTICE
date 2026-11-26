@@ -67,7 +67,9 @@
               <option value="M-M">M-M (Monthly / 10-Day)</option>
               <option value="Trial">Trial (10-Day)</option>
               <option value="Ext. Trial">Extended Trial (10-Day)</option>
+              <option value="2nd Trial">2nd Trial (10-Day)</option>
               <option value="3">3 months</option>
+              <option value="4">4 months</option>
               <option value="6">6 months</option>
               <option value="12">1 year</option>
               <option value="24">2 years</option>
@@ -116,6 +118,7 @@
       <div class="office-tab active" data-target="home">Home</div>
       <div class="office-tab" data-target="insert">Insert</div>
       <div class="office-tab" data-target="data">Data</div>
+      <div class="office-tab" data-target="template">Template</div>
       <div class="office-tab" data-target="view">View</div>
     </div>
 
@@ -212,6 +215,33 @@
         </div>
       </div>
 
+      <!-- NEW TEMPLATE MENU RIBBON -->
+      <div class="ribbon-content hidden flex gap-4 w-full" id="ribbon-template">
+        <div class="flex flex-col items-center border-r border-slate-200 pr-4">
+          <div class="flex gap-2">
+            <button id="editIntentTemplateBtn" onclick="openTemplateEditorModal('page1')" class="ribbon-btn" title="Edit Page 1 of the Intent Letter HTML template">
+              <svg class="text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+              Edit Page 1
+            </button>
+            <button onclick="openTemplateEditorModal('page2')" class="ribbon-btn" title="Edit Page 2 (Response & Intent Letter) HTML template">
+              <svg class="text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              Edit Page 2
+            </button>
+          </div>
+          <span class="text-[10px] text-slate-400 mt-1">Intent Letter Layout</span>
+        </div>
+
+        <div class="flex flex-col items-center">
+          <div class="flex gap-2">
+            <button onclick="resetTemplateToDefault()" class="ribbon-btn" title="Restore the original built-in Intent Letter template">
+              <svg class="text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              Reset Default
+            </button>
+          </div>
+          <span class="text-[10px] text-slate-400 mt-1">Restore</span>
+        </div>
+      </div>
+
       <div class="ribbon-content hidden flex gap-4 w-full" id="ribbon-view">
         <div class="flex flex-col justify-center text-xs text-slate-500 px-4 w-full text-center">
           Data is synced with Google Sheets. Drag and drop the tabs below to reorder them visually.
@@ -265,7 +295,9 @@
               <option value="M-M">M-M (Monthly / 10-Day)</option>
               <option value="Trial">Trial (10-Day)</option>
               <option value="Ext. Trial">Extended Trial (10-Day)</option>
+              <option value="2nd Trial">2nd Trial (10-Day)</option>
               <option value="3">3 months</option>
+              <option value="4">4 months</option>
               <option value="6">6 months</option>
               <option value="12" selected>1 year</option>
               <option value="24">2 years</option>
@@ -369,7 +401,7 @@
           <div class="ml-6 mt-1">Your <span id="outDayLabelOrdinal">20th</span> day will fall on: <strong id="outNoticeDeadline"></strong></div>
         </div>
 
-        <div class="list-item"><span class="num">3.</span><strong>ADVANCE PAYMENT AND MANAGEMENT DISCRETION</strong> – If the tenant chooses to renew the lease contract, the tenant shall be required to pay an amount equivalent to 20% of the monthly rent rate. This amount shall be paid from the <span class="outNoticeWindow">last 20 days to last 15 days</span> before the current contract ends. The 80% must be paid starting on the last 14 days until the last day of current contract ends. If the contract has already ended and the tenant stays beyond it without paying the remaining 80%, the tenant will be charged a daily rate of ________________ for <b><span id="outOverstayDays"></span></b></span> only. Management reserves the right to amend, modify, or update policies and terms at its sole discretion as necessary for operational and administrative purposes.</div>
+        <div class="list-item"><span class="num">3.</span><strong>ADVANCE PAYMENT AND MANAGEMENT DISCRETION</strong> – If the tenant chooses to renew the lease contract, the tenant shall be required to pay an amount equivalent to 20% of the monthly rent rate. This amount shall be paid from the <span class="outNoticeWindow">last 20 days to last 15 days</span> before the current contract ends. The 80% must be paid starting on the last 14 days until the last day of current contract ends. If the contract has already ended and the tenant stays beyond it without paying the remaining 80%, the tenant will be charged a daily rate of ________________ for <b><span id="outOverstayDays"></span></b> only. Management reserves the right to amend, modify, or update policies and terms at its sole discretion as necessary for operational and administrative purposes.</div>
 
         <div class="list-item"><span class="num">4.</span><strong>FAILURE TO COMPLY / DEDUCTION FROM DEPOSIT</strong> – If the tenant fails to pay 20% of the monthly rent rate and/or confirm renewal or non-renewal within five (5) days (between the <span class="outNoticeWindow">last 20 days to last 15 days</span>) before the current contract ends, a penalty shall apply starting on the <span id="outPenaltyWindowLabel">last 14 days</span> until the tenant pays the 20% reservation fee for renewal or until the current contract ends. A penalty of ₱500.00 per day.
           <div class="ml-6 mt-1">If the tenant has a penalty but still intends to renew, the penalty must be settled first to proceed the renewal process.</div>
