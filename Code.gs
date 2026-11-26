@@ -227,26 +227,36 @@ function handleCRUD(data) {
   } else if (data.action === 'update') {
     const tenantNameCol = headerIndex(headers, "Tenant Name") + 1;
     const unitCol = headerIndex(headers, "Unit") + 1;
+    let updatedRows = 0;
     if (tenantNameCol > 0 && unitCol > 0 && sheet.getLastRow() > 1) {
       const textFinder = sheet.getRange(2, tenantNameCol, sheet.getLastRow() - 1, 1)
-        .createTextFinder(data.tenantName).findAll();
+        .createTextFinder(data.previousTenantName || data.tenantName)
+        .matchEntireCell(true)
+        .findAll();
 
       for (let i = 0; i < textFinder.length; i++) {
         const row = textFinder[i].getRow();
         const rowUnit = sheet.getRange(row, unitCol).getValue();
+        const expectedUnit = data.previousUnit !== undefined ? data.previousUnit : data.unit;
 
-        if (rowUnit === data.unit || textFinder.length === 1) {
+        if (String(rowUnit).trim() === String(expectedUnit).trim()) {
           const setIfPresent = (headerName, value) => {
             const column = headerIndex(headers, headerName) + 1;
             if (column > 0 && value !== undefined) sheet.getRange(row, column).setValue(value);
           };
 
+          setIfPresent("Tenant Name", data.tenantName);
+          setIfPresent("Unit", data.unit);
+          setIfPresent("Building", data.building);
+          setIfPresent("Computed Due Date", data.computed20th);
+          setIfPresent("Monthly Rent", data.rent);
           setIfPresent("Status", data.status);
           setIfPresent("Date Sent", data.dateSent);
           setIfPresent("Term", data.termLabel);
           setIfPresent("Reason", data.reason);
           setIfPresent("Start Date", data.startDate);
           setIfPresent("End of Contract", normalizeEndContract(data.endContract));
+          updatedRows++;
 
           if (data.pdfUrl !== undefined) {
             const pdfColumn = headerIndex(headers, "PDF Link") + 1;
@@ -262,6 +272,9 @@ function handleCRUD(data) {
           }
         }
       }
+    }
+    if (updatedRows === 0) {
+      throw new Error(`Could not find "${data.previousTenantName || data.tenantName}" in "${data.tabName}" to update.`);
     }
   }
 
